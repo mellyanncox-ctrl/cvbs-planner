@@ -1,0 +1,2061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CVBS Social Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;0,900;1,400&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* CVBS Brand */
+  --teal: #00AEBB;
+  --teal-dark: #008A96;
+  --teal-deeper: #006b75;
+  --mint: #e0f7f9;
+  --mint-mid: #b2edf2;
+  --white: #ffffff;
+  --ink: #0a2224;
+  --ink-mid: #1a3a3d;
+
+  /* UI */
+  --border: #c8eaed;
+  --soft: #f0fbfc;
+  --cream: #f7fdfe;
+  --mid: #5a9fa5;
+  --muted: #7fbfc5;
+
+  /* Status colours */
+  --live: #059669;
+  --live-bg: #ecfdf5;
+  --live-border: #6ee7b7;
+  --planned: var(--teal-dark);
+  --planned-bg: #e0f7f9;
+  --planned-border: var(--mint-mid);
+  --idle: #94a3b8;
+  --idle-bg: #f1f5f9;
+  --red: #dc2626;
+  --red-bg: #fef2f2;
+
+  /* Pillars */
+  --p-venue: #0891b2;
+  --p-tips: #059669;
+  --p-social: #be185d;
+  --p-edu: #6d28d9;
+  --p-promo: #d97706;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Nunito', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; font-size: 14px; }
+
+/* ── HEADER ── */
+.header {
+  background: var(--teal-deeper);
+  padding: 0 2rem;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  box-shadow: 0 2px 12px rgba(0,110,117,0.3);
+}
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand-mark {
+  background: var(--white);
+  color: var(--teal-deeper);
+  font-family: 'Fraunces', serif;
+  font-weight: 900;
+  font-size: 0.9rem;
+  padding: 4px 11px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+.brand-name { color: rgba(255,255,255,0.6); font-size: 0.7rem; font-weight: 400; letter-spacing: 2.5px; text-transform: uppercase; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.header-chip { font-size: 0.7rem; color: rgba(255,255,255,0.55); background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); padding: 3px 10px; border-radius: 20px; }
+.header-chip.ig { color: var(--mint-mid); border-color: rgba(178,237,242,0.35); font-weight: 600; }
+
+/* ── LAYOUT ── */
+.layout { display: grid; grid-template-columns: 290px 1fr; min-height: calc(100vh - 60px); }
+
+/* ── SIDEBAR ── */
+.sidebar { background: var(--white); border-right: 1.5px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; }
+.sidebar-section { padding: 1.25rem 1.25rem 0; margin-bottom: 1.25rem; }
+.sidebar-section:first-child { padding-top: 1.5rem; }
+.s-label { font-size: 0.62rem; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 0.65rem; }
+
+.week-list { display: flex; flex-direction: column; gap: 4px; }
+.week-item { display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.8rem; border-radius: 8px; cursor: pointer; border: 1.5px solid transparent; transition: all 0.15s; user-select: none; }
+.week-item:hover { background: var(--soft); border-color: var(--mint-mid); }
+.week-item.active { background: var(--teal); border-color: var(--teal); }
+.week-dates { font-size: 0.78rem; font-weight: 600; color: var(--ink-mid); }
+.week-item.active .week-dates { color: #fff; }
+.week-status { display: flex; gap: 4px; align-items: center; }
+.dot { width: 7px; height: 7px; border-radius: 50%; }
+.dot-live { background: var(--live); }
+.dot-planned { background: var(--teal); }
+.dot-empty { background: var(--border); }
+
+.queue-count { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+.queue-num { font-family: 'Fraunces', serif; font-size: 2rem; color: var(--teal); line-height: 1; font-weight: 700; }
+.queue-label { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+.queue-mini-list { display: flex; flex-direction: column; gap: 5px; max-height: 190px; overflow-y: auto; }
+.queue-mini-item { display: flex; align-items: center; gap: 7px; padding: 0.5rem 0.65rem; border-radius: 7px; background: var(--soft); cursor: pointer; border: 1px solid transparent; transition: all 0.15s; font-size: 0.75rem; font-weight: 500; color: var(--ink-mid); }
+.queue-mini-item:hover { background: var(--mint); border-color: var(--mint-mid); }
+.pillar-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+.add-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 0.55rem; margin-top: 8px; border-radius: 7px; border: 1.5px dashed var(--border); background: transparent; font-family: 'Nunito', sans-serif; font-size: 0.75rem; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+.add-btn:hover { border-color: var(--teal); color: var(--teal); background: var(--mint); }
+
+.legend { display: flex; flex-direction: column; gap: 7px; }
+.legend-row { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--ink-mid); }
+.legend-badge { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+/* ── MAIN ── */
+.main { overflow-y: auto; padding: 1.75rem 2rem; background: var(--cream); }
+.main-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px; }
+.main-title { font-family: 'Fraunces', serif; font-size: 1.7rem; color: var(--ink); line-height: 1.15; font-weight: 700; }
+.main-sub { font-size: 0.78rem; color: var(--mid); margin-top: 4px; font-weight: 400; }
+
+/* ── BUTTONS ── */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 0.5rem 1.1rem; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: none; font-family: 'Nunito', sans-serif; transition: all 0.15s; white-space: nowrap; letter-spacing: 0.2px; }
+.btn-primary { background: var(--teal); color: #fff; }
+.btn-primary:hover { background: var(--teal-dark); }
+.btn-dark { background: var(--teal-deeper); color: #fff; }
+.btn-dark:hover { background: var(--ink); }
+.btn-ghost { background: #fff; color: var(--ink-mid); border: 1.5px solid var(--border); }
+.btn-ghost:hover { background: var(--soft); border-color: var(--teal); }
+.btn-live { background: var(--live-bg); color: var(--live); border: 1.5px solid var(--live-border); }
+.btn-live:hover { background: #d1fae5; }
+.btn-mint { background: var(--mint); color: var(--teal-deeper); border: 1.5px solid var(--mint-mid); }
+.btn-mint:hover { background: var(--mint-mid); }
+.btn-sm { padding: 0.32rem 0.75rem; font-size: 0.71rem; }
+.btn-danger { background: var(--red-bg); color: var(--red); border: 1.5px solid #fecaca; }
+.btn-danger:hover { background: #fee2e2; }
+.btn-generate { background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%); color: #fff; box-shadow: 0 3px 12px rgba(0,174,187,0.35); }
+.btn-generate:hover { box-shadow: 0 4px 18px rgba(0,174,187,0.5); transform: translateY(-1px); }
+
+/* ── TOOLBAR ── */
+.toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px; }
+.toolbar-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* ── VIEW TABS ── */
+.view-tabs { display: flex; gap: 3px; background: #fff; border: 1.5px solid var(--border); border-radius: 10px; padding: 3px; }
+.view-tab { padding: 0.4rem 0.95rem; border-radius: 7px; font-size: 0.75rem; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.15s; border: none; background: transparent; font-family: 'Nunito', sans-serif; }
+.view-tab.active { background: var(--teal); color: #fff; }
+
+/* ── WEEKLY CALENDAR ── */
+.calendar-wrap { background: #fff; border: 1.5px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 1.5rem; }
+.cal-nav { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; background: var(--teal-deeper); color: #fff; }
+.cal-nav-title { font-family: 'Fraunces', serif; font-size: 1.05rem; font-weight: 700; }
+.cal-nav-sub { font-size: 0.72rem; color: rgba(255,255,255,0.6); margin-top: 2px; }
+
+.cal-week-grid {
+  display: grid;
+  grid-template-columns: 70px repeat(7, 1fr);
+  border-top: 1px solid var(--border);
+}
+
+/* Day headers */
+.cal-day-header {
+  background: var(--mint);
+  padding: 0.6rem 0.5rem;
+  text-align: center;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.cal-day-header:last-child { border-right: none; }
+.cal-day-header .day-name { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--teal-dark); }
+.cal-day-header .day-num { font-family: 'Fraunces', serif; font-size: 1.1rem; font-weight: 700; color: var(--ink); line-height: 1; margin-top: 2px; }
+.cal-day-header .day-month { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.cal-day-header.today { background: var(--teal); }
+.cal-day-header.today .day-name, .cal-day-header.today .day-num, .cal-day-header.today .day-month { color: #fff; }
+.cal-day-header.past { background: var(--soft); opacity: 0.7; }
+
+/* Time label column */
+.cal-time-col { border-right: 1px solid var(--border); }
+.cal-time-slot { height: 80px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: flex-end; padding: 6px 8px 0 0; font-size: 0.6rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.cal-time-slot:last-child { border-bottom: none; }
+
+/* Day columns */
+.cal-day-col { border-right: 1px solid var(--border); position: relative; }
+.cal-day-col:last-child { border-right: none; }
+.cal-day-col.today-col { background: rgba(0,174,187,0.03); }
+.cal-day-col.past-col { background: var(--soft); }
+
+.cal-row { height: 80px; border-bottom: 1px solid var(--border); position: relative; padding: 4px; }
+.cal-row:last-child { border-bottom: none; }
+.cal-row.drop-zone { transition: background 0.15s; cursor: pointer; }
+.cal-row.drop-zone:hover, .cal-row.drag-over { background: var(--mint); }
+
+.cal-post-block {
+  border-radius: 6px;
+  padding: 4px 7px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+  border: 1.5px solid;
+  margin-bottom: 3px;
+  overflow: hidden;
+  position: relative;
+  transition: all 0.15s;
+}
+.cal-post-block:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.12); }
+.cal-block-planned { background: var(--planned-bg); border-color: var(--planned-border); color: var(--teal-deeper); }
+.cal-block-live { background: var(--live-bg); border-color: var(--live-border); color: #065f46; }
+.cal-block-empty { background: transparent; border: 1.5px dashed var(--border); color: var(--muted); text-align: center; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; min-height: 32px; border-radius: 5px; cursor: pointer; transition: all 0.15s; }
+.cal-block-empty:hover { border-color: var(--teal); color: var(--teal); background: var(--mint); }
+
+.add-slot-btn { width: 100%; border: 1.5px dashed var(--border); border-radius: 5px; background: transparent; color: var(--muted); font-size: 0.65rem; font-weight: 600; font-family: 'Nunito', sans-serif; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; gap: 3px; transition: all 0.15s; margin-top: 3px; }
+.add-slot-btn:hover { border-color: var(--teal); color: var(--teal); background: var(--mint); }
+
+/* ── WEEK CARDS (list view) ── */
+.weeks-grid { display: flex; flex-direction: column; gap: 1.25rem; }
+.week-card { background: #fff; border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; transition: box-shadow 0.2s; }
+.week-card:hover { box-shadow: 0 4px 20px rgba(0,174,187,0.1); }
+.week-card.selected { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(0,174,187,0.12); }
+.week-card-header { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 1.25rem; background: var(--soft); border-bottom: 1px solid var(--border); cursor: pointer; }
+.week-label { font-family: 'Fraunces', serif; font-size: 1rem; color: var(--ink); font-weight: 700; }
+.week-range { font-size: 0.72rem; color: var(--mid); font-weight: 400; margin-left: 8px; }
+.week-card-meta { display: flex; align-items: center; gap: 8px; }
+.status-chip { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.5px; padding: 3px 9px; border-radius: 20px; }
+.chip-done { background: var(--live-bg); color: var(--live); }
+.chip-partial { background: var(--mint); color: var(--teal-dark); }
+.chip-empty { background: var(--idle-bg); color: var(--idle); }
+
+.slots-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.slot { padding: 1rem 1.25rem; border-right: 1px solid var(--border); min-height: 110px; }
+.slot:last-child { border-right: none; }
+.slot-label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 0.6rem; display: flex; align-items: center; gap: 6px; }
+.slot-label .num { background: var(--teal); color: #fff; width: 17px; height: 17px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.58rem; font-weight: 700; }
+.slot-empty { display: flex; flex-direction: column; gap: 7px; }
+.slot-empty-hint { font-size: 0.77rem; color: var(--muted); font-style: italic; }
+.slot-drop-zone { border: 1.5px dashed var(--border); border-radius: 8px; padding: 0.6rem; text-align: center; font-size: 0.71rem; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+.slot-drop-zone:hover, .slot-drop-zone.drag-over { border-color: var(--teal); background: var(--mint); color: var(--teal-dark); }
+.slot-filled { display: flex; flex-direction: column; gap: 6px; }
+.post-card { border-radius: 8px; padding: 0.65rem 0.85rem; border: 1.5px solid; }
+.post-card.type-planned { background: var(--planned-bg); border-color: var(--planned-border); }
+.post-card.type-live { background: var(--live-bg); border-color: var(--live-border); }
+.post-card-title { font-weight: 700; font-size: 0.81rem; color: var(--ink); line-height: 1.35; margin-bottom: 3px; }
+.post-card-meta { font-size: 0.7rem; color: var(--mid); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.post-card-actions { display: flex; gap: 5px; margin-top: 7px; flex-wrap: wrap; }
+.slot.slot-live { background: rgba(5,150,105,0.04); }
+.live-event-card { background: #fff; border: 1.5px solid var(--live-border); border-radius: 8px; padding: 0.65rem 0.85rem; }
+.live-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--live); background: var(--live-bg); border: 1px solid var(--live-border); padding: 2px 8px; border-radius: 20px; margin-bottom: 5px; }
+.live-pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--live); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+.week-card-footer { padding: 0.7rem 1.25rem; display: flex; align-items: center; gap: 8px; background: var(--soft); flex-wrap: wrap; border-top: 1px solid var(--border); }
+.footer-note { font-size: 0.72rem; color: var(--mid); font-style: italic; flex: 1; min-width: 140px; }
+
+/* ── PILLAR TAGS ── */
+.pillar-tag { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; }
+.p-venue { background: #dbeafe; color: #1d4ed8; }
+.p-tips { background: #dcfce7; color: #15803d; }
+.p-promo { background: #fef3c7; color: #92400e; }
+.p-social { background: #fce7f3; color: #be185d; }
+.p-edu { background: #ede9fe; color: #6d28d9; }
+.format-pill { font-size: 0.62rem; color: var(--muted); background: var(--soft); padding: 2px 7px; border-radius: 4px; border: 1px solid var(--border); }
+.caption-saved-badge { font-size: 0.62rem; background: #dcfce7; color: #15803d; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+
+/* ── IDEA BANK ── */
+.idea-bank { display: none; }
+.idea-bank.active { display: block; }
+.weeks-view.hidden { display: none; }
+.overview-view { display: none; }
+.overview-view.active { display: block; }
+.calendar-view { display: none; }
+.calendar-view.active { display: block; }
+
+.bank-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1rem; margin-top: 1.25rem; }
+.idea-item { background: #fff; border: 1.5px solid var(--border); border-radius: 10px; padding: 1.1rem; cursor: grab; transition: all 0.2s; }
+.idea-item:hover { box-shadow: 0 4px 18px rgba(0,174,187,0.12); transform: translateY(-2px); border-color: var(--teal); }
+.idea-item:active { cursor: grabbing; }
+.idea-item-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.65rem; gap: 8px; }
+.idea-item-title { font-weight: 700; font-size: 0.84rem; color: var(--ink); line-height: 1.4; margin-bottom: 0.4rem; }
+.idea-item-caption { font-size: 0.75rem; color: var(--mid); line-height: 1.6; margin-bottom: 0.6rem; }
+.idea-item-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 0.6rem; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 5px; }
+.best-time { font-size: 0.68rem; color: var(--muted); }
+
+/* ── GENERATE IDEAS SECTION ── */
+.generate-panel {
+  background: linear-gradient(135deg, var(--teal-deeper) 0%, var(--teal-dark) 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.generate-panel-text .title { font-family: 'Fraunces', serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
+.generate-panel-text .sub { font-size: 0.78rem; color: rgba(255,255,255,0.7); line-height: 1.5; }
+.generate-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.generate-select { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-family: 'Nunito', sans-serif; font-size: 0.78rem; padding: 0.45rem 0.85rem; border-radius: 7px; appearance: none; cursor: pointer; font-weight: 600; }
+.generate-select option { background: var(--teal-deeper); color: #fff; }
+
+/* ── MONTHLY OVERVIEW ── */
+.month-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+.month-stat-card { background: #fff; border: 1.5px solid var(--border); border-radius: 10px; padding: 1.1rem; text-align: center; }
+.month-stat-num { font-family: 'Fraunces', serif; font-size: 2rem; color: var(--teal); line-height: 1; font-weight: 700; }
+.month-stat-label { font-size: 0.72rem; color: var(--mid); margin-top: 4px; }
+.consistency-bar { height: 6px; background: var(--border); border-radius: 10px; overflow: hidden; margin-top: 8px; }
+.consistency-fill { height: 100%; border-radius: 10px; background: var(--teal); transition: width 0.6s ease; }
+
+.month-cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 1.5rem; }
+.mcal-header { background: var(--teal-deeper); color: #fff; text-align: center; padding: 0.55rem; font-size: 0.67rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.mcal-day { background: #fff; min-height: 68px; padding: 5px 6px; font-size: 0.7rem; }
+.mcal-day.other { background: var(--soft); }
+.mcal-day.today-m { background: var(--mint); }
+.mcal-day-num { font-size: 0.7rem; font-weight: 700; color: var(--mid); margin-bottom: 3px; }
+.mcal-dot { font-size: 0.6rem; padding: 1px 4px; border-radius: 3px; margin-bottom: 2px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.mdot-live { background: var(--live-bg); color: var(--live); }
+.mdot-planned { background: var(--planned-bg); color: var(--teal-dark); }
+
+/* ── MODALS ── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(10,34,36,0.55); z-index: 500; align-items: center; justify-content: center; padding: 2rem; }
+.modal-overlay.open { display: flex; }
+.modal { background: #fff; border-radius: 14px; width: 100%; max-width: 540px; overflow: hidden; animation: slideUp 0.22s ease; max-height: 90vh; display: flex; flex-direction: column; }
+.modal.modal-wide { max-width: 680px; }
+@keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+.modal-header { background: var(--teal-deeper); padding: 1.2rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.modal-title { font-family: 'Fraunces', serif; font-size: 1.1rem; color: #fff; font-weight: 700; }
+.modal-close { color: rgba(255,255,255,0.6); cursor: pointer; font-size: 1.1rem; background: none; border: none; padding: 3px 7px; border-radius: 5px; transition: all 0.15s; line-height: 1; }
+.modal-close:hover { color: #fff; background: rgba(255,255,255,0.12); }
+.modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; flex: 1; }
+.modal-footer { padding: 1rem 1.5rem; background: var(--soft); display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); flex-shrink: 0; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+label { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
+input, select, textarea { width: 100%; padding: 0.6rem 0.85rem; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'Nunito', sans-serif; font-size: 0.82rem; color: var(--ink); background: var(--soft); transition: border-color 0.15s; appearance: none; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--teal); background: #fff; box-shadow: 0 0 0 3px rgba(0,174,187,0.1); }
+textarea { resize: vertical; line-height: 1.6; }
+.info-box { background: var(--mint); border: 1px solid var(--mint-mid); border-radius: 8px; padding: 0.85rem; font-size: 0.78rem; color: var(--teal-deeper); line-height: 1.6; }
+
+/* CAPTION */
+.caption-box { background: var(--soft); border: 1.5px solid var(--border); border-radius: 8px; padding: 1rem; font-size: 0.82rem; line-height: 1.8; color: var(--ink); white-space: pre-wrap; min-height: 140px; font-family: 'Nunito', sans-serif; cursor: text; }
+.caption-box:focus { outline: none; border-color: var(--teal); background: #fff; }
+.char-count { font-size: 0.67rem; color: var(--muted); text-align: right; margin-top: 4px; }
+
+/* CHECKLIST */
+.checklist-section { margin-bottom: 1rem; }
+.checklist-title { font-size: 0.71rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 0.5rem; }
+.check-item { display: flex; align-items: flex-start; gap: 10px; padding: 0.5rem 0; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; }
+.check-item:last-child { border: none; }
+.check-item input[type=checkbox] { margin-top: 2px; width: 15px; height: 15px; cursor: pointer; accent-color: var(--teal); flex-shrink: 0; }
+.check-item label { font-size: 0.8rem; color: var(--ink-mid); cursor: pointer; font-weight: 500; letter-spacing: 0; text-transform: none; line-height: 1.4; }
+.check-item.checked label { text-decoration: line-through; color: var(--muted); }
+.checklist-progress { background: var(--border); height: 5px; border-radius: 10px; overflow: hidden; margin-bottom: 1rem; }
+.checklist-progress-fill { height: 100%; background: var(--teal); border-radius: 10px; transition: width 0.3s ease; }
+
+/* EXPORT */
+.export-preview { background: var(--soft); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; font-size: 0.76rem; line-height: 1.9; color: var(--mid); max-height: 300px; overflow-y: auto; white-space: pre-wrap; font-family: monospace; }
+
+/* IDEA GENERATION RESULT */
+.generated-ideas { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.gen-idea-item { background: var(--soft); border: 1.5px solid var(--border); border-radius: 9px; padding: 0.85rem 1rem; display: flex; align-items: flex-start; gap: 10px; cursor: pointer; transition: all 0.15s; }
+.gen-idea-item:hover { background: var(--mint); border-color: var(--teal); }
+.gen-idea-item .check { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; margin-top: 2px; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
+.gen-idea-item.selected .check { background: var(--teal); border-color: var(--teal); color: #fff; font-size: 0.7rem; }
+.gen-idea-title { font-weight: 700; font-size: 0.82rem; color: var(--ink); line-height: 1.35; }
+.gen-idea-meta { font-size: 0.71rem; color: var(--muted); margin-top: 3px; }
+
+/* TOAST */
+.toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--teal-deeper); color: #fff; padding: 0.75rem 1.25rem; border-radius: 9px; font-size: 0.8rem; font-weight: 600; z-index: 999; transform: translateY(60px); opacity: 0; transition: all 0.3s ease; pointer-events: none; box-shadow: 0 4px 20px rgba(0,110,117,0.35); }
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.teal { background: var(--teal); }
+.toast.live { background: var(--live); }
+
+/* FILTER BUTTONS */
+.filter-btn.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+
+/* PRINT */
+@media print {
+  .header,.sidebar,.toolbar,.week-card-footer,.post-card-actions,.modal-overlay,.toast,.generate-panel { display: none !important; }
+  .layout { grid-template-columns: 1fr; }
+  .main { padding: 0; }
+  body { background: white; }
+  .week-card { break-inside: avoid; margin-bottom: 1rem; border: 1px solid #ccc; box-shadow: none; }
+  .print-header { display: block !important; text-align: center; padding: 1rem; border-bottom: 2px solid var(--teal); margin-bottom: 1.5rem; }
+}
+.print-header { display: none; }
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--mint-mid); border-radius: 10px; }
+
+/* ── FULL CONTENT MODAL ── */
+.content-modal-body { max-height: 72vh; overflow-y: auto; padding: 0; }
+.content-section { padding: 1.1rem 1.4rem; border-bottom: 1px solid var(--border); }
+.content-section:last-child { border-bottom: none; }
+.content-section-label { font-size: 0.62rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
+.content-slide { background: var(--soft); border: 1.5px solid var(--border); border-radius: 9px; padding: 0.85rem 1rem; margin-bottom: 0.6rem; }
+.content-slide:last-child { margin-bottom: 0; }
+.slide-num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--teal); color: #fff; font-size: 0.65rem; font-weight: 700; margin-right: 6px; flex-shrink: 0; }
+.slide-header { display: flex; align-items: center; font-weight: 700; font-size: 0.82rem; color: var(--ink); margin-bottom: 0.35rem; }
+.slide-body { font-size: 0.78rem; color: var(--ink-mid); line-height: 1.65; padding-left: 28px; }
+.slide-body ul { margin: 0.3rem 0 0 1rem; }
+.slide-body li { margin-bottom: 0.2rem; }
+.content-visual-note { background: #fffbeb; border: 1px solid #fde68a; border-radius: 7px; padding: 0.6rem 0.85rem; font-size: 0.74rem; color: #92400e; margin-top: 0.5rem; padding-left: 28px; }
+.content-script { font-size: 0.8rem; color: var(--ink-mid); line-height: 1.75; white-space: pre-wrap; background: var(--soft); border: 1.5px solid var(--border); border-radius: 9px; padding: 1rem; }
+.content-caption-preview { font-size: 0.79rem; color: var(--ink-mid); line-height: 1.7; white-space: pre-wrap; background: var(--mint); border: 1.5px solid var(--mint-mid); border-radius: 9px; padding: 1rem; }
+.btn-content { background: var(--soft); color: var(--teal-deeper); border: 1.5px solid var(--mint-mid); }
+.btn-content:hover { background: var(--mint); border-color: var(--teal); }
+</style>
+</head>
+<body>
+
+<div class="print-header">
+  <h1 style="font-family:'Fraunces',serif;color:var(--teal-deeper)">CVBS — Social Media Planner</h1>
+  <p style="color:var(--mid);font-size:0.85rem;margin-top:4px">@cvbsaustralia · Printed <span id="print-date"></span></p>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="brand">
+    <div class="brand-mark">CVBS</div>
+    <div class="brand-name">Social Planner</div>
+  </div>
+  <div class="header-right">
+    <div class="header-chip">🌏 Worldwide</div>
+    <div class="header-chip ig">@cvbsaustralia · ~350 followers</div>
+    <div class="header-chip" id="save-indicator" style="color:rgba(255,255,255,0.4);font-size:0.65rem;">💾 Auto-saving</div>
+    <button onclick="clearState()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.45);font-size:0.65rem;padding:3px 9px;border-radius:20px;cursor:pointer;font-family:'Nunito',sans-serif;" title="Reset all data">↺ Reset</button>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="s-label">Weeks</div>
+      <div class="week-list" id="week-nav"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="s-label">Idea Queue</div>
+      <div class="queue-count">
+        <div><div class="queue-num" id="queue-count-num">0</div><div class="queue-label">ideas ready to schedule</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="showView('bank')">View all</button>
+      </div>
+      <div class="queue-mini-list" id="queue-mini"></div>
+      <button class="add-btn" onclick="openAddIdea()">+ Add new idea</button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="s-label">Legend</div>
+      <div class="legend">
+        <div class="legend-row"><div class="legend-badge" style="background:var(--teal)"></div>Planned post</div>
+        <div class="legend-row"><div class="legend-badge" style="background:var(--live)"></div>Live event post</div>
+        <div class="legend-row"><div class="legend-badge" style="background:var(--border)"></div>Empty slot</div>
+        <div class="legend-row"><div class="legend-badge" style="background:var(--teal-deeper)"></div>Target: 3 posts/week</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <div class="view-tabs">
+          <button class="view-tab active" onclick="showView('calendar')">📅 Calendar</button>
+          <button class="view-tab" onclick="showView('weeks')">📋 Week List</button>
+          <button class="view-tab" onclick="showView('bank')">💡 Idea Bank</button>
+          <button class="view-tab" onclick="showView('overview')">📊 Overview</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost" onclick="openExport()">🖨️ Export</button>
+        <button class="btn btn-live" onclick="openLiveEvent()">📸 Live Event</button>
+        <button class="btn btn-primary" onclick="openAddIdea()">+ Add Idea</button>
+      </div>
+    </div>
+
+    <!-- CALENDAR VIEW -->
+    <div class="calendar-view active" id="calendar-view">
+      <div class="main-header">
+        <div>
+          <div class="main-title">Content Calendar</div>
+          <div class="main-sub" id="cal-subtitle">Loading…</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="shiftWeek(-1)">← Prev Week</button>
+          <button class="btn btn-mint btn-sm" onclick="goToday()">Today</button>
+          <button class="btn btn-ghost btn-sm" onclick="shiftWeek(1)">Next Week →</button>
+        </div>
+      </div>
+      <div class="calendar-wrap">
+        <div class="cal-nav">
+          <div>
+            <div class="cal-nav-title" id="cal-nav-title">Week of …</div>
+            <div class="cal-nav-sub">3 posts per week — drag ideas onto days, or click a slot</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-live btn-sm" onclick="openLiveEvent()">📸 Live Event</button>
+            <button class="btn btn-primary btn-sm" onclick="openAddIdea()">+ Idea</button>
+          </div>
+        </div>
+        <div class="cal-week-grid" id="cal-week-grid"><!-- JS --></div>
+      </div>
+    </div>
+
+    <!-- WEEK LIST VIEW -->
+    <div class="weeks-view hidden" id="weeks-view">
+      <div class="main-header">
+        <div><div class="main-title">Week List</div><div class="main-sub">All weeks at a glance</div></div>
+      </div>
+      <div class="weeks-grid" id="weeks-grid"></div>
+    </div>
+
+    <!-- IDEA BANK VIEW -->
+    <div class="idea-bank" id="idea-bank-view">
+      <div class="main-header">
+        <div><div class="main-title">Idea Bank</div><div class="main-sub">Your pool of ready-to-schedule content — worldwide</div></div>
+        <button class="btn btn-primary" onclick="openAddIdea()">+ Add Idea</button>
+      </div>
+
+      <!-- GENERATE PANEL -->
+      <div class="generate-panel">
+        <div class="generate-panel-text">
+          <div class="title">✨ Running low on ideas?</div>
+          <div class="sub">Pick a content pillar and generate a fresh batch of post concepts — instantly.</div>
+        </div>
+        <div class="generate-controls">
+          <select class="generate-select" id="gen-pillar">
+            <option value="all">All Pillars</option>
+            <option value="venue">🏛️ Venue Showcase</option>
+            <option value="tips">📋 Tips & Education</option>
+            <option value="social">⭐ Social Proof</option>
+            <option value="edu">🎓 Industry Education</option>
+            <option value="promo">🎉 Promotion</option>
+          </select>
+          <button class="btn btn-generate" onclick="openGenerateModal()">Generate Ideas →</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm filter-btn active" onclick="filterBank('all',this)">All</button>
+        <button class="btn btn-ghost btn-sm filter-btn" onclick="filterBank('venue',this)">🏛️ Venue</button>
+        <button class="btn btn-ghost btn-sm filter-btn" onclick="filterBank('tips',this)">📋 Tips</button>
+        <button class="btn btn-ghost btn-sm filter-btn" onclick="filterBank('social',this)">⭐ Social Proof</button>
+        <button class="btn btn-ghost btn-sm filter-btn" onclick="filterBank('edu',this)">🎓 Education</button>
+        <button class="btn btn-ghost btn-sm filter-btn" onclick="filterBank('promo',this)">🎉 Promo</button>
+      </div>
+      <div class="bank-grid" id="bank-grid"></div>
+    </div>
+
+    <!-- OVERVIEW VIEW -->
+    <div class="overview-view" id="overview-view">
+      <div class="main-header">
+        <div><div class="main-title">Monthly Overview</div><div class="main-sub">March–April 2026 — posting consistency</div></div>
+      </div>
+      <div class="month-stats" id="month-stats"></div>
+      <div class="month-cal-grid" id="month-cal-grid"></div>
+      <div style="background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:1.25rem;">
+        <div style="font-family:'Fraunces',serif;font-size:1rem;color:var(--ink);margin-bottom:0.75rem;font-weight:700;">📋 Post Log</div>
+        <div id="post-log"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD IDEA MODAL -->
+<div class="modal-overlay" id="add-idea-modal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">✨ Add New Idea</div><button class="modal-close" onclick="closeModal('add-idea-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Post Title / Concept</label><input type="text" id="new-idea-title" placeholder="e.g. 5 Questions to Ask Before Booking Any Venue"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group"><label>Content Pillar</label><select id="new-idea-pillar"><option value="venue">🏛️ Venue Showcase</option><option value="tips">📋 Tips & Education</option><option value="social">⭐ Social Proof</option><option value="edu">🎓 Industry Education</option><option value="promo">🎉 Promotion</option></select></div>
+        <div class="form-group"><label>Format</label><select id="new-idea-format"><option>Carousel</option><option>Static</option><option>Story</option><option>Static + Story</option><option>Infographic</option></select></div>
+      </div>
+      <div class="form-group"><label>Brief / Caption Direction</label><textarea id="new-idea-caption" rows="3" placeholder="Hook, key points, CTA…"></textarea></div>
+      <div class="form-group"><label>Best Day / Time to Post</label><input type="text" id="new-idea-time" placeholder="e.g. Monday 7:30am"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('add-idea-modal')">Cancel</button><button class="btn btn-primary" onclick="saveIdea()">Save to Bank →</button></div>
+  </div>
+</div>
+
+<!-- LIVE EVENT MODAL -->
+<div class="modal-overlay" id="live-event-modal">
+  <div class="modal modal-wide">
+    <div class="modal-header"><div class="modal-title">📸 Live Event Caption Builder</div><button class="modal-close" onclick="closeModal('live-event-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="info-box">🟢 A live event counts as one of your 3 posts for the week.</div>
+      <div class="form-group"><label>Event Name & Venue</label><input type="text" id="live-name" placeholder="e.g. CVBS Venue Showcase Night at Hotel X"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group"><label>Which Week?</label><select id="live-week"></select></div>
+        <div class="form-group"><label>Post Date</label><input type="text" id="live-date" placeholder="e.g. Tue 17 Mar"></div>
+      </div>
+      <div class="form-group">
+        <label>Client Caption <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(paste their caption to check it, or leave blank)</span></label>
+        <textarea id="live-client-caption" rows="3" placeholder="Paste your client's caption here — AI will review it and suggest improvements…"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Your Notes <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(optional — add context for the AI)</span></label>
+        <textarea id="live-notes" rows="2" placeholder="e.g. rooftop venue, 150 guests, corporate dinner, Sydney…"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:0.5rem;">
+        <button class="btn btn-generate" id="live-generate-btn" onclick="generateLiveCaption()" style="flex:1;justify-content:center;">🪄 Generate Caption + Hashtags</button>
+        <button class="btn btn-ghost" onclick="closeModal('live-event-modal');openPhotoChecklist()">📷 Photo Checklist</button>
+      </div>
+      <div class="form-group">
+        <label>Caption <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(edit freely)</span></label>
+        <div class="caption-box" contenteditable="true" id="live-caption-text" style="min-height:100px;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group"><label>Hashtags</label><textarea id="live-hashtags" rows="2" placeholder="#CVBSAustralia #VenueHire…"></textarea></div>
+        <div class="form-group"><label>CTA</label><textarea id="live-cta" rows="2" placeholder="e.g. Link in bio to enquire"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <button class="btn btn-ghost" onclick="closeModal('live-event-modal')">Cancel</button>
+      <button class="btn btn-live" onclick="saveLiveEvent()">✅ Add to Week →</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCHEDULE MODAL -->
+<div class="modal-overlay" id="schedule-modal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">📅 Schedule Post</div><button class="modal-close" onclick="closeModal('schedule-modal')">✕</button></div>
+    <div class="modal-body">
+      <div id="schedule-idea-preview" style="background:var(--soft);border-radius:8px;padding:0.85rem;font-size:0.82rem;color:var(--ink-mid);line-height:1.6;border:1.5px solid var(--border)"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group"><label>Week</label><select id="sched-week"></select></div>
+        <div class="form-group"><label>Slot</label><select id="sched-slot"><option value="0">Post 1</option><option value="1">Post 2</option></select></div>
+      </div>
+      <div class="form-group"><label>Date & Time</label><input type="text" id="sched-datetime" placeholder="e.g. Mon 16 Mar at 7:30am"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('schedule-modal')">Cancel</button><button class="btn btn-dark" onclick="confirmSchedule()">Confirm →</button></div>
+  </div>
+</div>
+
+<!-- CAPTION MODAL -->
+<div class="modal-overlay" id="caption-modal">
+  <div class="modal modal-wide">
+    <div class="modal-header"><div class="modal-title">✍️ Caption Builder</div><button class="modal-close" onclick="closeModal('caption-modal')">✕</button></div>
+    <div class="modal-body">
+      <div id="caption-post-info" style="background:var(--soft);border-radius:8px;padding:0.75rem;font-size:0.8rem;color:var(--ink-mid);border:1.5px solid var(--border);line-height:1.5;"></div>
+
+      <div class="form-group">
+        <label>Your Notes <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(optional — tell Claude what to focus on)</span></label>
+        <textarea id="caption-notes" rows="2" placeholder="e.g. rooftop venue in Dubai, sunset views, great for corporate dinners, found this through our network…" style="resize:vertical;"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Caption <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(edit freely or click Generate)</span></label>
+        <div class="caption-box" contenteditable="true" id="caption-text" oninput="updateCharCount()"></div>
+        <div class="char-count" id="char-count">0 characters</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group"><label>Hashtags</label><textarea id="caption-hashtags" rows="2" placeholder="#CVBSAustralia #VenueHire #EventPlanning …"></textarea></div>
+        <div class="form-group"><label>CTA</label><textarea id="caption-cta" rows="2" placeholder="e.g. DM us to enquire, link in bio…"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <button class="btn btn-generate" id="generate-btn" onclick="generateCaption()">🪄 Generate with AI</button>
+      <div style="display:flex;gap:8px;"><button class="btn btn-ghost" onclick="closeModal('caption-modal')">Close</button><button class="btn btn-primary" onclick="saveCaption()">💾 Save Caption</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- PHOTO CHECKLIST MODAL -->
+<div class="modal-overlay" id="photo-modal">
+  <div class="modal modal-wide">
+    <div class="modal-header"><div class="modal-title">📷 Photo Checklist</div><button class="modal-close" onclick="closeModal('photo-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="info-box" style="margin-bottom:0.5rem">📸 Capture these at your live event. Tick off as you go!</div>
+      <div class="checklist-progress"><div class="checklist-progress-fill" id="checklist-bar" style="width:0%"></div></div>
+      <div id="photo-checklist-items"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="resetChecklist()">Reset</button><button class="btn btn-live" onclick="closeModal('photo-modal')">Done ✓</button></div>
+  </div>
+</div>
+
+<!-- GENERATE IDEAS MODAL -->
+<div class="modal-overlay" id="generate-modal">
+  <div class="modal modal-wide">
+    <div class="modal-header"><div class="modal-title">✨ Generate Post Ideas</div><button class="modal-close" onclick="closeModal('generate-modal')">✕</button></div>
+    <div class="modal-body">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;">
+        <select id="gen-modal-pillar" style="flex:1;min-width:160px">
+          <option value="all">All Pillars</option>
+          <option value="venue">🏛️ Venue Showcase</option>
+          <option value="tips">📋 Tips & Education</option>
+          <option value="social">⭐ Social Proof</option>
+          <option value="edu">🎓 Industry Education</option>
+          <option value="promo">🎉 Promotion</option>
+        </select>
+        <button class="btn btn-generate" onclick="runGenerate()">🔄 Generate</button>
+      </div>
+      <div class="info-box" style="font-size:0.75rem;">Select the ideas you want to add to your bank, then click "Add Selected".</div>
+      <div class="generated-ideas" id="generated-ideas-list"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('generate-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addSelectedIdeas()">Add Selected to Bank →</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="export-modal">
+  <div class="modal modal-wide">
+    <div class="modal-header"><div class="modal-title">🖨️ Export & Print</div><button class="modal-close" onclick="closeModal('export-modal')">✕</button></div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0.5rem;">
+        <button class="btn btn-dark" style="justify-content:center;padding:0.75rem;" onclick="printPlanner()">🖨️ Print Planner</button>
+        <button class="btn btn-ghost" style="justify-content:center;padding:0.75rem;" onclick="copyExportText()">📋 Copy as Text</button>
+      </div>
+      <div class="form-group"><label>Text Preview</label><div class="export-preview" id="export-preview"></div></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('export-modal')">Close</button></div>
+  </div>
+</div>
+
+<!-- FULL CONTENT MODAL -->
+<div class="modal-overlay" id="content-modal">
+  <div class="modal modal-wide" style="max-width:680px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="content-modal-title">📄 Full Content</div>
+        <div id="content-modal-meta" style="font-size:0.72rem;color:rgba(255,255,255,0.65);margin-top:2px;"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('content-modal')">✕</button>
+    </div>
+    <div class="content-modal-body" id="content-modal-body"></div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <button class="btn btn-mint" onclick="openCaptionFromContent()">✍️ Open Caption Builder</button>
+      <button class="btn btn-ghost" onclick="closeModal('content-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── TODAY ────────────────────────────────────────────────────────────────────
+const TODAY = new Date(2026, 2, 12); // Thursday 12 March 2026
+
+function getMonday(d) {
+  const dt = new Date(d);
+  const day = dt.getDay();
+  const diff = dt.getDate() - day + (day === 0 ? -6 : 1);
+  dt.setDate(diff);
+  dt.setHours(0,0,0,0);
+  return dt;
+}
+
+function addDays(d, n) { const dt = new Date(d); dt.setDate(dt.getDate()+n); return dt; }
+
+function fmtDate(d) {
+  return d.toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short' });
+}
+function fmtShort(d) { return d.toLocaleDateString('en-AU', { day:'numeric', month:'short' }); }
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAYS_FULL = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let calWeekStart = getMonday(TODAY); // currently displayed week
+let activeWeekIdx = 0;
+let bankFilter = 'all';
+let scheduleTargetId = null;
+let captionTargetId = null;
+let schedWeek = 0, schedSlot = 0;
+let nextId = 10;
+let checklistState = {};
+let generatedPool = [];
+let selectedGenIds = new Set();
+
+// Build 8 weeks starting from week of today
+function buildWeeks() {
+  const start = getMonday(TODAY);
+  const ws = [];
+  for (let i = 0; i < 8; i++) {
+    const mon = addDays(start, i * 7);
+    const sun = addDays(mon, 6);
+    ws.push({
+      label: `Week ${i+1}`,
+      range: `${fmtShort(mon)} – ${fmtShort(sun)}`,
+      monDate: new Date(mon),
+      slots: [{ type:'empty' }, { type:'empty' }, { type:'empty' }],
+      note: ''
+    });
+  }
+  return ws;
+}
+
+let weeks = buildWeeks();
+weeks.forEach(w => updateWeekNote2(w));
+
+const pillarMeta = {
+  venue:  { label:'🏛️ Venue',     cls:'p-venue',  color:'#0891b2' },
+  tips:   { label:'📋 Tips',      cls:'p-tips',   color:'#059669' },
+  social: { label:'⭐ Social',    cls:'p-social', color:'#be185d' },
+  edu:    { label:'🎓 Education', cls:'p-edu',    color:'#6d28d9' },
+  promo:  { label:'🎉 Promo',     cls:'p-promo',  color:'#d97706' },
+};
+
+let ideas = [
+  { id:1, title:'"Before & After: How This Function Space Transforms for Every Event Type"', pillar:'venue', format:'Carousel', caption:'Show 6–8 images of the same venue dressed for different occasions. Demonstrate CVBS versatility worldwide.', time:'Monday 7:30am', scheduled:false, savedCaption:'', savedHashtags:'', savedCta:'',
+    fullContent: {
+      type:'carousel',
+      slides:[
+        { title:'COVER SLIDE', copy:'Before & After:\nHow This Function Space Transforms for Every Event Type', visual:'Bold split image — one side empty/raw room, one side fully dressed. CVBS logo bottom right.' },
+        { title:'SLIDE 2 — THE VENUE', copy:'📍 [Venue Name], [City]\nCapacity: up to [X] guests\nWhat makes it special: [unique feature — e.g. floor-to-ceiling windows, heritage architecture, rooftop access]', visual:'Clean wide shot of the empty function space. Good lighting.' },
+        { title:'SLIDE 3 — CORPORATE CONFERENCE', copy:'🖥️ CORPORATE CONFERENCE\n\n• Classroom or theatre-style seating\n• Built-in AV and projection\n• Breakout space available\n• DDR packages from $[X] pp', visual:'Room dressed for conference — rows of chairs, screen/projector, branded lectern.' },
+        { title:'SLIDE 4 — GALA DINNER', copy:'🥂 GALA DINNER\n\n• Round tables, linen, centrepieces\n• Dance floor and stage\n• Sit-down for [X] guests\n• Full catering & bar available', visual:'Dressed for gala — candlelight, floral centrepieces, round tables.' },
+        { title:'SLIDE 5 — AWARDS NIGHT', copy:'🏆 AWARDS NIGHT\n\n• Stage and podium centrepiece\n• Theatre seating + standing cocktail hybrid\n• Branded backdrop options\n• Audiovisual uplighting included', visual:'Stage-focused shot with uplighting, branded signage area.' },
+        { title:'SLIDE 6 — COCKTAIL NETWORKING', copy:'🍸 COCKTAIL & NETWORKING\n\n• High tables and lounge areas\n• Canapé stations + bar\n• Free-flow mingling layout\n• Perfect for 50–200 guests', visual:'Open-plan cocktail setup — high tables, soft lighting, guests mingling.' },
+        { title:'SLIDE 7 — INCENTIVE / RETREAT', copy:'🌿 CORPORATE RETREAT\n\n• Classroom AM, relaxed PM layout\n• Outdoor or terrace access\n• Team building space available\n• Accommodation packages on request', visual:'More relaxed, natural lighting — comfortable chairs, greenery, casual setup.' },
+        { title:'FINAL SLIDE — CTA', copy:'One venue. Endless possibilities.\n\nCVBS finds and books venues like this — worldwide, completely free for event planners.\n\n💬 DM us your brief or visit the link in bio.', visual:'CVBS brand slide — teal background, logo, website/contact.' },
+      ],
+      caption:`✨ One room. Six completely different events.\n\nThis is why venue versatility matters — and why CVBS sources spaces that work as hard as you do.\n\n📍 [Venue Name], [City] — available for corporate events, galas, conferences, networking and more.\n\nCVBS finds and books extraordinary venues worldwide, completely free for event planners. Tell us your brief — we'll have a shortlist in your inbox within 48 hours.\n\n💬 DM us to get started.\n\n#CVBSAustralia #VenueHire #EventVenue #BeforeAndAfter #CorporateEvents #EventPlanning #WorldwideVenues`
+    }
+  },
+
+  { id:3, title:'"Hidden Gem: A Venue That Seats 200 But Feels Intimate"', pillar:'venue', format:'Carousel', caption:'Photo carousel showcasing the venue. Focus on unique architectural or design features that make it stand out.', time:'Tuesday 7am', scheduled:false, savedCaption:'', savedHashtags:'', savedCta:'',
+    fullContent: {
+      type:'carousel',
+      duration:'30–45 seconds',
+      scenes:[
+        { time:'0–3s', label:'HOOK', copy:'Text on screen: "Most people walk past this building every day. They have no idea what\'s inside." // Cut to: plain exterior of the venue.' },
+        { time:'3–8s', label:'REVEAL', copy:'Slow push through the entrance doors — dramatic interior reveal. Music builds.' },
+        { time:'8–18s', label:'WALKTHROUGH', copy:'Quick cuts: \n• Ceiling detail / statement feature\n• Main room capacity shot\n• Intimate corner or breakout space\n• Natural light moment\n• Unique detail (fireplace, skylight, raw brick, artwork)' },
+        { time:'18–25s', label:'THE PITCH', copy:'Text overlay: "[Venue Name] — [City]"\n"Seats up to 200. Feels like 20."\n"Available for conferences, dinners & private events."' },
+        { time:'25–30s', label:'CTA', copy:'Text: "CVBS found this one. We can find yours too."\n"Free venue sourcing worldwide — link in bio 👇"\nCVBS logo end card.' },
+      ],
+      musicNote:'Upbeat but sophisticated — try lo-fi house or cinematic indie. Avoid anything too trendy that will date quickly.',
+      caption:`You won't find this one on a Google search.\n\n📍 [Venue Name], [City] — one of our favourite hidden gems in the network.\n\nSeats 200 but walks like an intimate private club. Available for:\n→ Corporate conferences\n→ Private dinners\n→ Awards nights\n→ Incentive events\n\nCVBS sources extraordinary venues like this worldwide — and we book them for you, completely free.\n\n💬 DM us your brief.\n\n#VenueHire #HiddenGem #EventVenue #CVBSAustralia #CorporateEvents #EventPlanning`
+    }
+  },
+  { id:4, title:'"What Does a Venue Booking Service Actually Do?"', pillar:'edu', format:'Static + Story', caption:'Demystify CVBS. We find, negotiate, coordinate — so clients focus on their event. Global service.', time:'Monday 9am', scheduled:false, savedCaption:'', savedHashtags:'', savedCta:'',
+    fullContent: {
+      type:'static_story',
+      staticPost:{
+        headline:'What Does a Venue Booking Service Actually Do?',
+        subhead:'(And why it costs you nothing)',
+        body:'Most people assume they have to find, compare, and negotiate venues themselves.\n\nThey don\'t.\n\nAt CVBS, we:\n📌 Take your brief (size, budget, vibe, location)\n📌 Search our global network of 500+ venues\n📌 Send you a curated shortlist within 48 hours\n📌 Arrange and attend site inspections\n📌 Negotiate the best rate on your behalf\n📌 Manage all the paperwork through to booking\n\nAnd we do all of this completely free for event planners.',
+        cta:'💬 DM us "BRIEF" to get started.',
+        visual:'Clean infographic layout — CVBS teal on white. Step-by-step flow icons. Professional but approachable.'
+      },
+      story:[
+        { slide:1, copy:'❓ Do you know what a venue booking service actually does?\n\n(Most people are surprised by the answer…)\n\nSwipe up to find out 👆', visual:'Simple question card — teal background, white text.' },
+        { slide:2, copy:'We take your brief.\nWe find the venues.\nWe negotiate the rate.\nWe manage the booking.\n\n✅ All for FREE.', visual:'Quick-fire list card with checkmarks.' },
+        { slide:3, copy:'It\'s free because venues pay us a small finder\'s fee — you pay nothing extra.\n\nYou get a better venue, better rate, and zero stress.', visual:'Explainer card — friendly tone, clean layout.' },
+        { slide:4, copy:'Ready to try it?\n\n💬 DM us your brief or tap the link in bio.\n\nCVBS — Venue sourcing, worldwide.', visual:'CTA card — CVBS logo, teal, clear action.' },
+      ],
+      caption:`🎓 What does a venue booking service actually do?\n\nShort answer: everything you don't have time to do.\n\nAt CVBS, we find, shortlist, negotiate and book event venues globally — completely free for event planners.\n\nHere's how it works:\n📌 You send us your brief\n📌 We search our global network\n📌 You get a curated shortlist in 48 hours\n📌 We negotiate the best rate\n📌 We manage it through to booking\n\n🗳️ Any questions? Drop them below.\n\n#CVBSAustralia #VenueBooking #EventManagement #EventEducation #ConferencePlanning`
+    }
+  },
+  { id:5, title:'"Planning a 2026 End-of-Year Event? Here\'s Why You Should Book Now"', pillar:'promo', format:'Static + Story', caption:'Urgency around EOY events. Popular dates fill fast. Free consultation CTA.', time:'Friday 10am', scheduled:false, savedCaption:'', savedHashtags:'', savedCta:'',
+    fullContent: {
+      type:'static_story',
+      staticPost:{
+        headline:'Planning a 2026 End-of-Year Event?',
+        subhead:'The best venues are already filling up.',
+        body:'EOY season (October–December) is the most competitive time of year for event venues.\n\nThe venues you actually want? They book out 4–6 months in advance.\n\nIf your event is in:\n📅 October — book by June\n📅 November — book by July\n📅 December — book NOW\n\nDon\'t get stuck with a fallback venue.',
+        cta:'✨ Free consultation — CVBS will find and book your ideal venue. Link in bio.',
+        visual:'Bold typographic layout — countdown/urgency feel. Teal and dark ink palette.'
+      },
+      story:[
+        { slide:1, copy:'⚠️ If you\'re planning a 2026 end-of-year event...\n\nYou need to read this.', visual:'Attention-grabbing card. Dark background, white text, warning emoji.' },
+        { slide:2, copy:'The venues everyone wants?\n\nThey\'re already taking enquiries for November and December.\n\nFact.', visual:'Simple statement card with emphasis.' },
+        { slide:3, copy:'EOY venues that fill first:\n\n🏛️ Waterfront function spaces\n🥂 Boutique private dining rooms\n🌆 Rooftop event spaces\n🎉 Heritage / statement buildings', visual:'List of venue types with venue imagery tiles.' },
+        { slide:4, copy:'Let CVBS secure yours — for free.\n\n💬 DM us "EOY 2026" and we\'ll start your search today.', visual:'CTA card — CVBS logo, teal, strong call to action.' },
+      ],
+      caption:`⚠️ Planning a 2026 end-of-year event?\n\nHere's the truth: the best venues are already taking enquiries.\n\nOctober–December is the most competitive time of year. Popular rooftops, function spaces and private dining rooms fill 4–6 months in advance — especially for groups of 50+.\n\nIf you want the venue you actually want:\n→ Start looking now\n→ Or let CVBS find it for you\n\n✨ Free venue consultation — curated shortlist in 48 hours.\n\n📅 Spots are limited. Book via the link in bio.\n\n#CVBSAustralia #EventBooking #VenueHire #EOYEvent #CorporateEvents #EndOfYear2026`
+    }
+  },
+  { id:6, title:'"What Our Clients Say — Real Words From Real Clients"', pillar:'social', format:'Carousel', caption:'3–5 client quote cards with venue photos. Global clients. Free consultation CTA.', time:'Sunday 7pm', scheduled:false, savedCaption:'', savedHashtags:'', savedCta:'',
+    fullContent: {
+      type:'carousel',
+      slides:[
+        { title:'COVER SLIDE', copy:'Real words from real clients.\n\nWhat it\'s actually like to work with CVBS.', visual:'Clean teal branded cover card. CVBS logo centred. Subtitle text beneath.' },
+        { title:'SLIDE 2 — TESTIMONIAL 1', copy:'❝ CVBS found us a venue in Singapore in under 48 hours. We\'d been searching for weeks. ❞\n\n— [Client Name / Title optional], [Company]', visual:'Quote on a clean card. Background: photo of an elegant function space. Teal accent colour.' },
+        { title:'SLIDE 3 — TESTIMONIAL 2', copy:'❝ They saved us at least 15% on the venue rate. I didn\'t expect that — and it was completely free. ❞\n\n— [Client Name / Title optional], [Company]', visual:'Different venue photo background — different country or style to slide 2.' },
+        { title:'SLIDE 4 — TESTIMONIAL 3', copy:'❝ Our brief was complex. CVBS delivered a shortlist of 6 perfect options within 24 hours. Booked in 3 days. ❞\n\n— [Client Name / Title optional], [Company]', visual:'Another venue photo. Variety in location and style.' },
+        { title:'SLIDE 5 — SOCIAL PROOF STAT', copy:'500+ venues booked\n30+ countries\n100% free for event planners', visual:'Bold stat card. Teal background, white text. CVBS logo bottom.' },
+        { title:'FINAL SLIDE — CTA', copy:'Tell us your brief.\nWe\'ll find your venue.\n\n💬 DM us or link in bio to get started.', visual:'CVBS branded card. Teal background. Clear CTA.' },
+      ],
+      caption:`❝ CVBS found us a venue in Singapore in under 48 hours. ❞\n\nReal words from real clients.\n\nAt CVBS, we find and book extraordinary event venues worldwide — completely free for event planners.\n\n500+ venues · 30+ countries · 0 cost to you\n\n👇 Tag someone who has an event coming up — we'd love to help.\n\n#CVBSAustralia #VenueFinder #EventBooking #ClientLove #CorporateEvents #TestimonialTuesday`
+    }
+  },
+  { id:7, title:'"The Event Planning Timeline: 12 Months to Launch Day"', pillar:'tips', format:'Infographic Carousel', caption:'Shareable & saveable guide. 12m, 6m, 3m, 1m, 1wk milestones. Position CVBS at 12m mark.', time:'Wednesday 12pm', scheduled:false, savedCaption:'', savedHashtags:'', savedCta:'',
+    fullContent: {
+      type:'carousel',
+      slides:[
+        { title:'COVER SLIDE', copy:'The Event Planning Timeline:\n12 Months to Launch Day\n\n📌 Save this — refer back every stage', visual:'Clean infographic cover. Timeline graphic hinting. CVBS teal palette.' },
+        { title:'SLIDE 2 — 12 MONTHS OUT', copy:'📅 12 MONTHS OUT\n\n✓ Set your event objectives & KPIs\n✓ Confirm approximate budget\n✓ Decide on approximate guest numbers\n✓ Start venue search (THIS is the moment)\n✓ Engage CVBS for a free shortlist\n\n💡 The biggest mistake: waiting until 6 months. Premium venues go fast.', visual:'Timeline bar at 12m mark. Teal highlight. Action items listed.' },
+        { title:'SLIDE 3 — 9 MONTHS OUT', copy:'📅 9 MONTHS OUT\n\n✓ Venue secured & contract signed\n✓ Save-the-dates sent to guests\n✓ AV and tech requirements confirmed\n✓ Initial catering discussions started\n✓ Event theme / brand direction set', visual:'Timeline progresses. 9m highlighted.' },
+        { title:'SLIDE 4 — 6 MONTHS OUT', copy:'📅 6 MONTHS OUT\n\n✓ Event MC or facilitator booked\n✓ Speaker or entertainment confirmed\n✓ Guest list refined\n✓ Invitations designed and sent\n✓ Sponsorship / partner outreach complete', visual:'6m mark on timeline.' },
+        { title:'SLIDE 5 — 3 MONTHS OUT', copy:'📅 3 MONTHS OUT\n\n✓ Catering menu finalised\n✓ Dietary requirements collected\n✓ Run sheet drafted\n✓ AV production meeting scheduled\n✓ RSVPs being tracked & chased', visual:'3m mark. Pace picking up — visual energy builds.' },
+        { title:'SLIDE 6 — 1 MONTH OUT', copy:'📅 1 MONTH OUT\n\n✓ Final headcount confirmed\n✓ Seating plan completed\n✓ Briefing pack sent to all suppliers\n✓ MC notes and script reviewed\n✓ Bump-in and bump-out scheduled', visual:'Getting closer — 1m mark, details zooming in.' },
+        { title:'SLIDE 7 — 1 WEEK OUT', copy:'📅 1 WEEK OUT\n\n✓ Final walkthrough with venue\n✓ AV tech check done\n✓ Guest communication sent (logistics, parking, dress code)\n✓ Goodie bags / gifts prepared\n✓ Run sheet distributed to all key people', visual:'Final sprint visual. Checklist ticking.' },
+        { title:'FINAL SLIDE — CTA', copy:'🎉 LAUNCH DAY\n\nYou\'ve got this.\n\nNeed help getting from brief to booked?\nCVBS handles venue sourcing & booking — free for event planners worldwide.\n\n💬 DM us to start your search.', visual:'Celebration — confetti or fireworks. CVBS logo.' },
+      ],
+      caption:`📋 The complete event planning timeline — from 12 months out to launch day.\n\nSave this and share with your team.\n\n12 months: Secure your venue (don't wait — the best ones go fast)\n9 months: AV, catering conversations begin\n6 months: MC, speakers, entertainment confirmed\n3 months: Run sheet drafted, menu finalised\n1 month: Final headcount, seating plan\n1 week: Walkthrough, tech check, comms sent\n\nAt CVBS, we sit with you at the 12-month mark and make sure the venue is sorted before anything else.\n\nFree venue sourcing, worldwide.\n\n💾 Save this! You'll refer to it again.\n\n#EventTips #EventPlanning #CVBSAustralia #VenueBooking #CorporateEvents #EventTimeline`
+    }
+  },
+  { id:8, title:'"DDR vs BYO Catering: Which Is Right for Your Event?"', pillar:'edu', format:'Carousel + Story Poll', caption:'Story poll first, then full breakdown carousel. Drive DMs. Globally relevant concept.', time:'Thursday 12pm', scheduled:false, savedCaption:'', savedHashtags:'', savedCta:'',
+    fullContent: {
+      type:'carousel',
+      slides:[
+        { title:'STORY POLL (post first)', copy:'Story to go live 24hrs before the carousel:\n\n"Quick poll: When booking an event venue, do you prefer…"\n\n🅰️ DDR (venue provides everything)\n🅱️ BYO Catering (bring your own)\n\n"Results + full breakdown dropping tomorrow 👇"', visual:'Story poll format. Teal background. Simple A/B choice.' },
+        { title:'COVER SLIDE', copy:'DDR vs BYO Catering:\nWhich Is Right for Your Event?\n\n(We asked. You answered. Here\'s the breakdown.)', visual:'Results tease card. Poll results visible — reference yesterday\'s story.' },
+        { title:'SLIDE 2 — WHAT IS DDR?', copy:'☕ DDR = Day Delegate Rate\n\nA per-head package that bundles:\n✓ Room hire\n✓ Morning & afternoon tea\n✓ Lunch\n✓ AV basics (screen, projector, whiteboard)\n✓ Stationery & notepads\n✓ Unlimited tea & coffee\n\nOne price. One invoice. Zero fuss.', visual:'Conference catering spread. Neat, branded.' },
+        { title:'SLIDE 3 — DDR PROS & CONS', copy:'DDR: The Honest Breakdown\n\n✅ PROS:\n• Simple pricing & one invoice\n• Venue manages all logistics\n• Usually includes AV basics\n• Saves planning time\n\n⚠️ WATCH OUT FOR:\n• Menu flexibility is limited\n• Can be expensive for large groups\n• Quality varies — inspect the menu first', visual:'Pros/cons split visual. Clean infographic.' },
+        { title:'SLIDE 4 — WHAT IS BYO CATERING?', copy:'🍽️ BYO Catering\n\nYou bring an external caterer into the venue.\n\nWhen venues allow this:\n✓ You choose the caterer and menu\n✓ Greater dietary flexibility\n✓ Can be more cost-effective at scale\n✓ Better for themed or branded events\n\nNot all venues allow it — always ask upfront.', visual:'External caterer setting up. Off-site kitchen feel.' },
+        { title:'SLIDE 5 — BYO PROS & CONS', copy:'BYO Catering: The Honest Breakdown\n\n✅ PROS:\n• Full control over food & presentation\n• Better for dietary diversity\n• Often cheaper for 100+ pax\n• Great for premium or branded events\n\n⚠️ WATCH OUT FOR:\n• Venue may charge a kitchen/corkage fee\n• More coordination required\n• Bump-in logistics more complex', visual:'Pros/cons split visual. BYO version.' },
+        { title:'SLIDE 6 — HOW TO DECIDE', copy:'🤔 How to Choose?\n\nChoose DDR if:\n→ You want simplicity\n→ Your group is under 80 pax\n→ It\'s a standard conference day\n\nChoose BYO if:\n→ You have complex dietary needs\n→ You want branded / unique food experiences\n→ Your group is 100+ and budget matters', visual:'Decision tree infographic. Clean and scannable.' },
+        { title:'FINAL SLIDE — CTA', copy:'Not sure which is right for your event?\n\nCVBS will ask the right questions and recommend the best setup for your brief.\n\nFree venue sourcing & booking — worldwide.\n\n💬 DM us to get started.', visual:'CVBS teal branded card. CTA clear.' },
+      ],
+      caption:`☕ DDR or BYO Catering — which is right for your event?\n\nWe asked, you answered. Here's the full breakdown.\n\nDDR (Day Delegate Rate): one price, venue manages everything — great for simplicity\nBYO Catering: full control, better at scale — but more coordination required\n\nThe right choice depends on:\n→ Group size\n→ Dietary requirements\n→ How much flexibility you want\n→ Budget\n\nAt CVBS, we ask all the right questions before shortlisting any venue — so you always get the right setup.\n\n🗳️ Which do you prefer? Drop it in the comments 👇\n\n#CVBSAustralia #VenueBooking #EventManagement #EventEducation #ConferencePlanning #DDR`
+    }
+  },
+  { id:9, title:'"We\'ve Booked Venues in 30+ Countries — Here\'s What We\'ve Learnt"', pillar:'social', format:'Carousel', caption:'Highlight global expertise. Key lessons from international bookings. Authority-building post.', time:'Monday 9am', scheduled:false, savedCaption:'', savedHashtags:'', savedCta:'',
+    fullContent: {
+      type:'carousel',
+      slides:[
+        { title:'COVER SLIDE', copy:'We\'ve Booked Venues in 30+ Countries.\nHere\'s What We\'ve Learnt.\n\n(Some of these will surprise you)', visual:'World map with pins across continents. CVBS logo. Authoritative tone.' },
+        { title:'SLIDE 2', copy:'🌏 LESSON 1: Local expertise beats Google\n\nEvery city has a "locals know" venue hierarchy.\n\nThe most-Googled venue is rarely the best one for a corporate event.\n\nOur network knows who\'s actually great to work with — and who isn\'t.', visual:'City skyline with venue highlighted. Global feel.' },
+        { title:'SLIDE 3', copy:'💰 LESSON 2: Published rates are almost never final\n\nEvery venue has a negotiable rate.\n\nSome have been negotiated down 10–25% just by asking the right way.\n\nKnowing who to ask — and when — is the whole game.', visual:'Rate sheet or contract close-up. Numbers visible.' },
+        { title:'SLIDE 4', copy:'📋 LESSON 3: The contract details matter more than the site visit\n\nYou can fall in love with a venue on inspection and get burned by the contract.\n\nAlways check:\n→ Cancellation clauses\n→ Minimum spend requirements\n→ Exclusivity on catering & AV\n→ Force majeure coverage', visual:'Contract review scene. Detail-focused.' },
+        { title:'SLIDE 5', copy:'✈️ LESSON 4: International events need 2x the lead time\n\nLogistics, time zones, local supplier standards — it all adds up.\n\nA domestic event can often be pulled together in 6–8 weeks.\n\nInternational? Start at 6 months minimum.', visual:'World map with flight paths. Time zones.' },
+        { title:'SLIDE 6', copy:'🤝 LESSON 5: Relationships close deals\n\nThe venues that really deliver — they perform for clients their bookers trust.\n\nCVBS has those relationships. We\'ve built them over years and across continents.\n\nThat\'s the difference.', visual:'Handshake or relationship/meeting visual. Warm tone.' },
+        { title:'FINAL SLIDE — CTA', copy:'30+ countries. 500+ venues. Thousands of events.\n\nYours could be next.\n\nCVBS — free venue sourcing for event planners, worldwide.\n\n💬 DM us your brief.', visual:'Global authority card. World map + CVBS brand mark.' },
+      ],
+      caption:`🌏 30+ countries. 500+ venues. Here's what we've learnt.\n\nAfter years of sourcing event venues globally, a few things have become very clear:\n\n1. The best venue isn't always the most Googled\n2. Every published rate is negotiable\n3. The contract matters more than the site visit\n4. International events need 2x the lead time\n5. Relationships are everything\n\nCVBS brings all of this to every brief — completely free for event planners.\n\n👇 Which of these surprised you most? Tell us in the comments.\n\n#CVBSAustralia #VenueFinder #EventBooking #GlobalEvents #CorporateEvents #EventIndustry`
+    }
+  },
+];
+[2,1,6,7].forEach(id => { const i=ideas.find(x=>x.id===id); if(i) i.scheduled=false; });
+
+// ─── IDEA GENERATOR LIBRARY ───────────────────────────────────────────────────
+const ideaLibrary = {
+  venue: [
+    { title:'Rooftop Venues That Will Wow Your Guests — From Sydney to Singapore', caption:'Showcase stunning rooftop event spaces from our global network. Feature 3–5 with city, capacity, vibe.', format:'Carousel', time:'Monday 7:30am' },
+    { title:'Inside One of Our Favourite Boutique Conference Spaces', caption:'Photo carousel of a unique, character-filled venue. Focus on architecture and atmosphere.', format:'Carousel', time:'Tuesday 7am' },
+    { title:'Grand Function Spaces vs Intimate Lofts — Which Suits Your Event?', caption:'Side-by-side comparison carousel. Help clients understand which venue type fits their brief.', format:'Carousel', time:'Wednesday 12pm' },
+    { title:'Waterfront Venues That Make Every Event Feel Special', caption:'Curated collection of waterfront event spaces from our network. Aspirational imagery + brief details.', format:'Carousel', time:'Monday 7:30am' },
+    { title:'This Historic Building Is Now One of Our Top Event Venues', caption:'Feature a heritage venue with rich character. Focus on unique features guests won\'t find elsewhere.', format:'Static + Story', time:'Thursday 9am' },
+    { title:'Hotel Function Space or Blank Canvas? Here\'s How to Decide', caption:'Educational venue-type comparison. Pros and cons of each for different event styles.', format:'Carousel', time:'Wednesday 12pm' },
+    { title:'5 Venues in Our Network Perfect for an Incentive Trip', caption:'Luxury or unique venues suited for incentive travel. Tap into corporate travel market.', format:'Carousel', time:'Monday 7:30am' },
+  ],
+  tips: [
+    { title:'The 3 Biggest Mistakes People Make When Booking a Venue', caption:'Hook with pain points. Then solve each one. Position CVBS as the solution for all three.', format:'Carousel', time:'Wednesday 12pm' },
+    { title:'How Far in Advance Should You Book a Venue? (The Answer Might Surprise You)', caption:'Debunk common assumptions. Give concrete timelines based on event type and size.', format:'Static + Story', time:'Tuesday 12pm' },
+    { title:'What "DDR" Actually Means — And Why It Matters for Your Budget', caption:'Jargon-busting educational post. Practical and shareable for anyone planning a corporate event.', format:'Carousel', time:'Wednesday 12pm' },
+    { title:'Corporate Event Checklist: 10 Things to Confirm Before You Sign Anything', caption:'Super saveable checklist. Drives saves & shares. CTA to let CVBS handle all 10 for you.', format:'Carousel', time:'Thursday 12pm' },
+    { title:'How to Write a Venue Brief That Actually Gets You Great Results', caption:'Teach clients how to brief CVBS (or any venue). Builds trust and demonstrates expertise.', format:'Carousel', time:'Wednesday 12pm' },
+    { title:'AV Checklist: Questions to Ask Every Venue About Their Tech', caption:'Niche but highly useful for corporate event planners. Very saveable content.', format:'Carousel', time:'Thursday 12pm' },
+    { title:'What to Look for on a Site Visit — and What Most People Miss', caption:'Expert tips for venue site visits. Shows CVBS knowledge depth. Drives DMs.', format:'Carousel', time:'Wednesday 12pm' },
+  ],
+  social: [
+    { title:'"CVBS Found Us the Perfect Venue in 48 Hours" — Client Story', caption:'Structured client story: challenge → CVBS process → outcome. Ends with CTA.', format:'Carousel', time:'Sunday 7pm' },
+    { title:'From Brief to Booked: How We Found This Client Their Dream Venue', caption:'Behind-the-scenes of a real booking journey. Anonymised if needed. Shows the CVBS process.', format:'Carousel', time:'Thursday 9am' },
+    { title:'We\'ve Now Placed Events at Over 500 Venues Worldwide — Here\'s a Snapshot', caption:'Milestone post. Map or collage of global venue placements. Builds authority.', format:'Static + Story', time:'Monday 9am' },
+    { title:'What Happens After You Fill in Our Enquiry Form?', caption:'Walk through what clients can expect. Demystifies the process. Reassures first-time enquirers.', format:'Carousel', time:'Tuesday 12pm' },
+    { title:'⭐⭐⭐⭐⭐ — Real Reviews from Real Clients', caption:'Compile 4–5 standout reviews into a quote carousel. Drives trust and referrals.', format:'Carousel', time:'Sunday 7pm' },
+    { title:'We Went to Check Out This Venue So You Don\'t Have To', caption:'Photo review from a site visit. Your expert eye and real photos help clients make decisions faster.', format:'Carousel', time:'Thursday 9am' },
+  ],
+  edu: [
+    { title:'What Is a Conference & Venue Booking Service — And Is It Free?', caption:'Answer the most common question. Yes, it\'s free for event planners. Clear, jargon-free explainer.', format:'Carousel', time:'Monday 9am' },
+    { title:'The Difference Between a Venue Finder and an Event Manager', caption:'Clarify CVBS\'s specific role. Helps set expectations and attracts the right clients.', format:'Static + Story', time:'Tuesday 12pm' },
+    { title:'Why Booking Direct Isn\'t Always the Best Option', caption:'Honest, educational post about the value of using a service like CVBS. Not salesy — informative.', format:'Carousel', time:'Wednesday 12pm' },
+    { title:'How Venues Set Their Pricing — And How We Negotiate a Better Deal', caption:'Pulls back the curtain on venue pricing. Shows the insider value CVBS provides.', format:'Carousel', time:'Thursday 12pm' },
+    { title:'Corporate Event Trends We\'re Seeing in 2026', caption:'Industry roundup post. Positions CVBS as an informed, forward-thinking partner. Drives engagement.', format:'Carousel', time:'Monday 9am' },
+    { title:'Hybrid Events: What to Look for in a Venue\'s Tech Setup', caption:'Topical and practical. Great for corporate event planners. Showcases CVBS expertise.', format:'Carousel', time:'Wednesday 12pm' },
+  ],
+  promo: [
+    { title:'Limited Consultation Spots Open for Q3 Events — Don\'t Miss Out', caption:'Urgency-driven promo. Q3 and Q4 venues book out fast. Free consultation CTA.', format:'Static + Story', time:'Friday 10am' },
+    { title:'Planning an Incentive Trip in 2026? Let\'s Find the Perfect Venue', caption:'Target corporate travel decision-makers. Highlight CVBS global network. Free brief CTA.', format:'Static + Story', time:'Friday 10am' },
+    { title:'It\'s Free. It\'s Fast. It\'s CVBS — Here\'s How to Get Started', caption:'Simple, clear promotional post. 3-step explainer. Zero-cost message front and centre.', format:'Carousel', time:'Friday 10am' },
+    { title:'Your End-of-Year Event Brief Is Due Sooner Than You Think', caption:'Create urgency for EOY planning. Popular venues book out 6–9 months ahead globally.', format:'Static + Story', time:'Friday 10am' },
+    { title:'We\'ll Have a Venue Shortlist in Your Inbox Within 48 Hours', caption:'Speed + ease as key value props. What does the client actually experience? Show them.', format:'Static', time:'Friday 12pm' },
+  ],
+};
+
+function getGeneratedIdeas(pillar) {
+  let pool = [];
+  if (pillar === 'all') {
+    Object.keys(ideaLibrary).forEach(p => pool.push(...ideaLibrary[p].map(i => ({...i, pillar:p}))));
+  } else {
+    pool = (ideaLibrary[pillar] || []).map(i => ({...i, pillar}));
+  }
+  // Exclude already-in-bank titles
+  const existing = new Set(ideas.map(i => i.title));
+  pool = pool.filter(i => !existing.has(i.title));
+  // Shuffle and return up to 6
+  return pool.sort(() => Math.random()-0.5).slice(0, 6);
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function render() {
+  renderSidebarNav();
+  renderQueueMini();
+  renderCalendar();
+  renderWeekList();
+  renderBank();
+  renderOverview();
+}
+
+function renderSidebarNav() {
+  const nav = document.getElementById('week-nav');
+  nav.innerHTML = weeks.map((w,i) => {
+    const dots = w.slots.map(s =>
+      s.type==='live' ? `<div class="dot dot-live"></div>` :
+      s.type==='planned' ? `<div class="dot dot-planned"></div>` :
+      `<div class="dot dot-empty"></div>`).join('');
+    return `<div class="week-item ${i===activeWeekIdx?'active':''}" onclick="selectWeekIdx(${i})">
+      <div class="week-dates">${w.range}</div>
+      <div class="week-status">${dots}</div>
+    </div>`;
+  }).join('');
+
+  // Populate selects in modals
+  const weekOpts = weeks.map((w,i) => `<option value="${i}">${w.range}</option>`).join('');
+  ['live-week','sched-week'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = weekOpts;
+  });
+}
+
+function renderQueueMini() {
+  const unscheduled = ideas.filter(i => !i.scheduled);
+  document.getElementById('queue-count-num').textContent = unscheduled.length;
+  document.getElementById('queue-mini').innerHTML = unscheduled.slice(0,6).map(i => `
+    <div class="queue-mini-item" onclick="openScheduleModal(${i.id})">
+      <div class="pillar-dot" style="background:${pillarMeta[i.pillar].color}"></div>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${i.title.replace(/^"|"$/g,'').substring(0,36)}…</span>
+    </div>`).join('') || `<div style="font-size:0.75rem;color:var(--muted);padding:0.5rem 0.25rem">All ideas scheduled ✅</div>`;
+}
+
+// ── CALENDAR VIEW ──────────────────────────────────────────────────────────────
+function renderCalendar() {
+  const grid = document.getElementById('cal-week-grid');
+  const mon = calWeekStart;
+  const days = Array.from({length:7}, (_,i) => addDays(mon, i));
+
+  // Update nav
+  document.getElementById('cal-nav-title').textContent = `${fmtShort(days[0])} – ${fmtShort(days[6])} ${days[0].getFullYear()}`;
+  document.getElementById('cal-subtitle').textContent = `Week of ${fmtDate(days[0])}`;
+
+  // Find week index matching this calendar view
+  const calWeekIdx = weeks.findIndex(w => w.monDate.getTime() === mon.getTime());
+
+  // Build header row
+  let html = `<div class="cal-time-col"><div class="cal-day-header" style="background:var(--teal-deeper);border-bottom:1px solid var(--border);height:72px;"></div></div>`;
+
+  days.forEach((day, di) => {
+    const isToday = day.toDateString() === TODAY.toDateString();
+    const isPast = day < TODAY && !isToday;
+    html += `<div class="cal-day-header ${isToday?'today':''} ${isPast?'past':''}">
+      <div class="day-name">${DAYS_FULL[di]}</div>
+      <div class="day-num">${day.getDate()}</div>
+      <div class="day-month">${MONTHS[day.getMonth()]}</div>
+    </div>`;
+  });
+
+  // Time rows
+  const timeSlots = ['Morning\n7–9am', 'Midday\n12–2pm', 'Evening\n6–8pm'];
+  timeSlots.forEach((time, ti) => {
+    html += `<div class="cal-time-col"><div class="cal-time-slot" style="white-space:pre;line-height:1.3">${time}</div></div>`;
+    days.forEach((day, di) => {
+      const isToday = day.toDateString() === TODAY.toDateString();
+      const isPast = day < TODAY && !isToday;
+      html += `<div class="cal-day-col ${isToday?'today-col':''} ${isPast?'past-col':''}">
+        <div class="cal-row drop-zone" ondragover="dragOver(event)" ondrop="dropOnCal(event,'${day.toISOString()}',${ti})"
+          onclick="clickCalSlot('${day.toISOString()}', ${ti}, ${calWeekIdx})">`;
+
+      // Show posts on this day/time if any
+      if (calWeekIdx >= 0) {
+        const w = weeks[calWeekIdx];
+        w.slots.forEach((slot, si) => {
+          if (slot.type === 'planned') {
+            const idea = ideas.find(i => i.id === slot.ideaId);
+            if (idea) {
+              // Show all planned posts in the week across the calendar — assign by slot index to spread them
+              const assignedDay = si % 7;
+              if (assignedDay === di) {
+                html += `<div class="cal-post-block cal-block-planned" onclick="event.stopPropagation();openCaptionModal(${idea.id})" title="${idea.title.replace(/^"|"$/g,'')}">${idea.title.replace(/^"|"$/g,'').substring(0,28)}…</div>`;
+              }
+            }
+          } else if (slot.type === 'live') {
+            // Show live events — try date match first, fallback to slot 0
+            const dt = slot.date || '';
+            const dayNum = day.getDate();
+            const monthAbbr = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][day.getMonth()];
+            const dayMatch = dt.includes(String(dayNum)) && (dt.includes(monthAbbr) || dt === '');
+            if (dayMatch || (!dt && di === 0 && si === 0)) {
+              html += `<div class="cal-post-block cal-block-live" title="${slot.title}">📸 ${slot.title.substring(0,22)}…</div>`;
+            }
+          }
+        });
+      }
+
+      html += `<button class="add-slot-btn" onclick="event.stopPropagation();clickCalSlot('${day.toISOString()}',${ti},${calWeekIdx})">+ add</button>`;
+      html += `</div></div>`;
+    });
+  });
+
+  grid.innerHTML = html;
+}
+
+function clickCalSlot(isoDate, timeIdx, weekIdx) {
+  if (weekIdx < 0) {
+    // Need to create a week for this date — find or create
+    const d = new Date(isoDate);
+    const mon = getMonday(d);
+    const match = weeks.findIndex(w => w.monDate.getTime() === mon.getTime());
+    if (match >= 0) weekIdx = match;
+    else { showToast('This week is outside your planner range'); return; }
+  }
+  schedWeek = weekIdx;
+  document.getElementById('sched-week').value = weekIdx;
+  const d = new Date(isoDate);
+  const timeLabels = ['7:30am','12pm','7pm'];
+  document.getElementById('sched-datetime').value = `${fmtDate(d)} at ${timeLabels[timeIdx]}`;
+  const emptySlot = weeks[weekIdx].slots.findIndex(s => s.type==='empty');
+  schedSlot = emptySlot >= 0 ? emptySlot : 0;
+  document.getElementById('sched-slot').value = schedSlot;
+  const unscheduled = ideas.filter(i => !i.scheduled);
+  if (unscheduled.length === 0) { openAddIdea(); return; }
+  openScheduleModal(unscheduled[0].id);
+}
+
+function shiftWeek(n) {
+  calWeekStart = addDays(calWeekStart, n*7);
+  renderCalendar();
+}
+
+function goToday() {
+  calWeekStart = getMonday(TODAY);
+  renderCalendar();
+}
+
+// ── WEEK LIST VIEW ────────────────────────────────────────────────────────────
+function renderWeekList() {
+  document.getElementById('weeks-grid').innerHTML = weeks.map((w,wi) => {
+    const status = getSlotStatus(w);
+    const hasLive = w.slots.some(s=>s.type==='live');
+    return `<div class="week-card ${wi===activeWeekIdx?'selected':''}" id="week-card-${wi}">
+      <div class="week-card-header" onclick="selectWeekIdx(${wi})">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="week-label">${w.label}</span>
+          <span class="week-range">${w.range}</span>
+          ${hasLive?`<span class="live-badge"><span class="live-pulse"></span>Live Event</span>`:''}
+        </div>
+        <span class="status-chip ${status.cls}">${status.label}</span>
+      </div>
+      <div class="slots-row">${w.slots.map((s,si)=>renderSlot(s,wi,si)).join('')}</div>
+      <div class="week-card-footer">
+        <div class="footer-note">${w.note}</div>
+        <button class="btn btn-live btn-sm" onclick="openLiveEventForWeek(${wi})">📸 Live Event</button>
+        <button class="btn btn-ghost btn-sm" onclick="openScheduleForWeek(${wi})">+ Planned Post</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSlot(slot, wi, si) {
+  const label = `<div class="slot-label"><div class="num">${si+1}</div>POST ${si+1}</div>`;
+  if (slot.type==='live') {
+    const hasCap = slot.caption && slot.caption.length > 0;
+    return `<div class="slot slot-live">${label}
+      <div class="slot-filled"><div class="live-event-card">
+        <div class="live-badge"><span class="live-pulse"></span>Live Event</div>
+        <div class="post-card-title">${slot.title}</div>
+        <div class="post-card-meta">📅 ${slot.date||''}</div>
+        ${hasCap?`<span class="caption-saved-badge">✍️ Caption saved</span>`:''}
+      </div>
+      <div class="post-card-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openLiveEventEdit(${wi},${si})">✏️ Edit</button>
+        <button class="btn btn-ghost btn-sm" onclick="openPhotoChecklist()">📷 Checklist</button>
+        <button class="btn btn-danger btn-sm" onclick="removeSlot(${wi},${si})">Remove</button>
+      </div></div>
+    </div>`;
+  }
+  if (slot.type==='planned') {
+    const idea = ideas.find(i=>i.id===slot.ideaId);
+    if (!idea) return renderEmptySlot(wi,si,label);
+    const pm = pillarMeta[idea.pillar];
+    const hasCap = idea.savedCaption && idea.savedCaption.length>0;
+    return `<div class="slot">${label}
+      <div class="slot-filled">
+        <div class="post-card type-planned">
+          <div class="post-card-meta" style="margin-bottom:4px">
+            <span class="pillar-tag ${pm.cls}">${pm.label}</span>
+            <span class="format-pill">${idea.format}</span>
+            ${hasCap?`<span class="caption-saved-badge">✍️ Saved</span>`:''}
+          </div>
+          <div class="post-card-title">${idea.title.replace(/^"|"$/g,'')}</div>
+          <div class="post-card-meta">📅 ${slot.datetime||''}</div>
+        </div>
+        <div class="post-card-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openCaptionModal(${idea.id})">✍️ ${hasCap?'Edit':'Write'} Caption</button>
+          <button class="btn btn-ghost btn-sm" onclick="openEditScheduledPost(${wi},${si})">✏️ Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="removeSlot(${wi},${si})">Remove</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  return renderEmptySlot(wi,si,label);
+}
+
+function renderEmptySlot(wi,si,label) {
+  return `<div class="slot" ondragover="dragOver(event)" ondrop="drop(event,${wi},${si})">${label}
+    <div class="slot-empty">
+      <div class="slot-empty-hint">No post scheduled yet</div>
+      <div class="slot-drop-zone" ondragover="dragOver(event)" ondrop="drop(event,${wi},${si})" onclick="openScheduleForWeekSlot(${wi},${si})">📥 Drag idea here, or click to pick</div>
+      <button class="btn btn-live btn-sm" style="justify-content:center;width:100%" onclick="openLiveEventForWeekSlot(${wi},${si})">📸 Or log live event</button>
+    </div>
+  </div>`;
+}
+
+// ── IDEA BANK ─────────────────────────────────────────────────────────────────
+function renderBank() {
+  const filtered = ideas.filter(i => bankFilter==='all' || i.pillar===bankFilter);
+  if (!filtered.length) {
+    document.getElementById('bank-grid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)"><div style="font-size:2rem;margin-bottom:0.75rem">💡</div>No ideas in this category — generate some or add one!</div>`;
+    return;
+  }
+  document.getElementById('bank-grid').innerHTML = filtered.map(idea => {
+    const pm = pillarMeta[idea.pillar];
+    const hasCap = idea.savedCaption && idea.savedCaption.length>0;
+    return `<div class="idea-item" draggable="true" ondragstart="dragStart(event,${idea.id})">
+      <div class="idea-item-header">
+        <span class="pillar-tag ${pm.cls}">${pm.label}</span>
+        <span class="format-pill">${idea.format}</span>
+      </div>
+      <div class="idea-item-title">${idea.title.replace(/^"|"$/g,'')}</div>
+      <div class="idea-item-caption">${idea.caption}</div>
+      <div class="idea-item-footer">
+        <div class="best-time">⏰ ${idea.time}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+          ${idea.scheduled?`<span style="font-size:0.62rem;color:var(--live);background:var(--live-bg);padding:2px 6px;border-radius:4px;font-weight:700">✅ Scheduled</span>`:''}
+          ${hasCap?`<span class="caption-saved-badge">✍️</span>`:''}
+          <button class="btn btn-content btn-sm" onclick="openContentModal(${idea.id})">📄 Full Content</button>
+          <button class="btn btn-ghost btn-sm" onclick="openCaptionModal(${idea.id})">✍️</button>
+          ${!idea.scheduled?`<button class="btn btn-dark btn-sm" onclick="openScheduleModal(${idea.id})">Schedule →</button>`:''}
+          <button class="btn btn-danger btn-sm" onclick="removeIdea(${idea.id})">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── OVERVIEW ──────────────────────────────────────────────────────────────────
+function renderOverview() {
+  const allSlots = weeks.flatMap(w=>w.slots);
+  const total = allSlots.filter(s=>s.type!=='empty').length;
+  const live = allSlots.filter(s=>s.type==='live').length;
+  const full = weeks.filter(w=>w.slots.filter(s=>s.type!=='empty').length===2).length;
+  const pct = Math.round((total/(weeks.length*2))*100);
+
+  document.getElementById('month-stats').innerHTML = `
+    <div class="month-stat-card"><div class="month-stat-num">${total}</div><div class="month-stat-label">Posts scheduled</div><div class="consistency-bar"><div class="consistency-fill" style="width:${Math.min(100,total/16*100)}%"></div></div></div>
+    <div class="month-stat-card"><div class="month-stat-num">${live}</div><div class="month-stat-label">Live event posts</div></div>
+    <div class="month-stat-card"><div class="month-stat-num">${full}</div><div class="month-stat-label">Full weeks (3 posts)</div></div>
+    <div class="month-stat-card"><div class="month-stat-num">${pct}%</div><div class="month-stat-label">Consistency score</div><div class="consistency-bar"><div class="consistency-fill" style="width:${pct}%"></div></div></div>`;
+
+  // March–April mini calendar
+  const days7 = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  let cal = days7.map(d=>`<div class="mcal-header">${d}</div>`).join('');
+
+  // March 2026: starts on Sunday (index 6 → skip 6 Mon–Sat)
+  // We'll show March 9 onwards (Mon 9 Mar) through April 30
+  const startMon = new Date(2026,2,9); // Mon 9 Mar
+  const endDate = new Date(2026,3,30); // 30 Apr
+
+  // Build post-by-date map
+  const postMap = {};
+  weeks.forEach(w => {
+    w.slots.forEach(s => {
+      if (s.type==='empty') return;
+      const dt = s.date || s.datetime || '';
+      const m = dt.match(/(\d+)\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i);
+      if (m) {
+        const monthNames = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+        const mo = monthNames.indexOf(m[2].toLowerCase());
+        const key = `${mo}-${parseInt(m[1])}`;
+        if (!postMap[key]) postMap[key] = [];
+        postMap[key].push(s.type);
+      }
+    });
+  });
+
+  let cursor = new Date(startMon);
+  while (cursor <= endDate) {
+    const key = `${cursor.getMonth()}-${cursor.getDate()}`;
+    const posts = postMap[key] || [];
+    const isToday = cursor.toDateString() === TODAY.toDateString();
+    cal += `<div class="mcal-day ${isToday?'today-m':''}">
+      <div class="mcal-day-num">${cursor.getDate() === 1 ? MONTHS[cursor.getMonth()]+' '+cursor.getDate() : cursor.getDate()}</div>
+      ${posts.map(t=>`<span class="mcal-dot ${t==='live'?'mdot-live':'mdot-planned'}">${t==='live'?'📸':'📝'}</span>`).join('')}
+    </div>`;
+    cursor = addDays(cursor, 1);
+  }
+  document.getElementById('month-cal-grid').innerHTML = cal;
+
+  // Post log
+  const allPosts = [];
+  weeks.forEach(w => w.slots.forEach(s => {
+    if (s.type==='empty') return;
+    const title = s.type==='live' ? s.title : (ideas.find(i=>i.id===s.ideaId)||{}).title||'';
+    const idea = s.type==='planned' ? ideas.find(i=>i.id===s.ideaId) : null;
+    allPosts.push({ type:s.type, title, date:s.date||s.datetime||'', hasCap: idea && idea.savedCaption });
+  }));
+  document.getElementById('post-log').innerHTML = allPosts.length ? `<table style="width:100%;border-collapse:collapse;font-size:0.79rem">
+    <thead><tr>${['Date','Post','Type','Caption'].map(h=>`<th style="text-align:left;padding:0.5rem 0.75rem;background:var(--soft);font-size:0.67rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted)">${h}</th>`).join('')}</tr></thead>
+    <tbody>${allPosts.map(p=>`<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:0.6rem 0.75rem;color:var(--mid)">${p.date}</td>
+      <td style="padding:0.6rem 0.75rem;font-weight:600">${(p.title||'').replace(/^"|"$/g,'').substring(0,48)}</td>
+      <td style="padding:0.6rem 0.75rem">${p.type==='live'?`<span class="live-badge" style="margin:0"><span class="live-pulse"></span>Live</span>`:`<span style="font-size:0.67rem;background:var(--planned-bg);color:var(--teal-dark);padding:2px 7px;border-radius:4px;font-weight:700">Planned</span>`}</td>
+      <td style="padding:0.6rem 0.75rem">${p.hasCap?`<span style="font-size:0.67rem;background:var(--live-bg);color:var(--live);padding:2px 7px;border-radius:4px;font-weight:700">✅ Saved</span>`:`<span style="color:var(--muted)">—</span>`}</td>
+    </tr>`).join('')}</tbody></table>` : `<div style="color:var(--muted);font-size:0.82rem;padding:1rem 0">No posts scheduled yet.</div>`;
+}
+
+function getSlotStatus(w) {
+  const n = w.slots.filter(s=>s.type!=='empty').length;
+  if (n===3) return { cls:'chip-done', label:'✅ Complete' };
+  if (n===2) return { cls:'chip-partial', label:'⚡ 1 more needed' };
+  if (n===1) return { cls:'chip-partial', label:'⚡ 2 more needed' };
+  return { cls:'chip-empty', label:'Empty' };
+}
+
+// ─── VIEWS ────────────────────────────────────────────────────────────────────
+function showView(view) {
+  document.querySelectorAll('.view-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('calendar-view').classList[view==='calendar'?'add':'remove']('active');
+  document.getElementById('weeks-view').classList[view==='weeks'?'remove':'add']('hidden');
+  document.getElementById('idea-bank-view').classList[view==='bank'?'add':'remove']('active');
+  document.getElementById('overview-view').classList[view==='overview'?'add':'remove']('active');
+  const tabs = document.querySelectorAll('.view-tab');
+  const map = {calendar:0, weeks:1, bank:2, overview:3};
+  if (map[view] !== undefined) tabs[map[view]].classList.add('active');
+  if (view==='bank') renderBank();
+  if (view==='overview') renderOverview();
+  if (view==='calendar') renderCalendar();
+}
+
+function selectWeekIdx(idx) {
+  activeWeekIdx = idx;
+  calWeekStart = new Date(weeks[idx].monDate);
+  renderSidebarNav();
+  renderWeekList();
+  renderCalendar();
+}
+
+function filterBank(p, btn) {
+  bankFilter = p;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderBank();
+}
+
+// ─── DRAG & DROP ──────────────────────────────────────────────────────────────
+let draggedId = null;
+function dragStart(e, id) { draggedId=id; e.dataTransfer.setData('text/plain',id); }
+function dragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function drop(e, wi, si) {
+  e.preventDefault(); e.currentTarget.classList.remove('drag-over');
+  if (draggedId && weeks[wi].slots[si].type==='empty') { scheduleIdea(draggedId,wi,si,''); draggedId=null; }
+}
+function dropOnCal(e, isoDate, timeIdx) {
+  e.preventDefault(); e.currentTarget.classList.remove('drag-over');
+  if (!draggedId) return;
+  const d = new Date(isoDate);
+  const mon = getMonday(d);
+  const wi = weeks.findIndex(w => w.monDate.getTime()===mon.getTime());
+  if (wi<0) { showToast('Week not in planner range'); return; }
+  const si = weeks[wi].slots.findIndex(s=>s.type==='empty');
+  if (si<0) { showToast('Week already full!'); return; }
+  const timeLabels=['7:30am','12pm','7pm'];
+  scheduleIdea(draggedId, wi, si, `${fmtDate(d)} at ${timeLabels[timeIdx]}`);
+  draggedId = null;
+}
+
+// ─── MODALS ───────────────────────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function openAddIdea() {
+  ['new-idea-title','new-idea-caption','new-idea-time'].forEach(id => document.getElementById(id).value='');
+  openModal('add-idea-modal');
+}
+
+function saveIdea() {
+  const title = document.getElementById('new-idea-title').value.trim();
+  if (!title) { showToast('Please enter a post title'); return; }
+  ideas.push({ id:nextId++, title:`"${title}"`, pillar:document.getElementById('new-idea-pillar').value, format:document.getElementById('new-idea-format').value, caption:document.getElementById('new-idea-caption').value.trim()||'No brief yet.', time:document.getElementById('new-idea-time').value.trim()||'Flexible', scheduled:false, savedCaption:'', savedHashtags:'', savedCta:'' });
+  closeModal('add-idea-modal'); render(); showToast('💡 Idea added!');
+}
+
+function openLiveEvent() { openLiveEventForWeek(activeWeekIdx); }
+function openEditScheduledPost(wi, si) {
+  // Open schedule modal pre-filled to allow changing the idea or date
+  const slot = weeks[wi].slots[si];
+  if (!slot || slot.type !== 'planned') return;
+  schedWeek = wi; schedSlot = si; scheduleTargetId = slot.ideaId;
+  const idea = ideas.find(i=>i.id===slot.ideaId);
+  if (!idea) return;
+  document.getElementById('schedule-idea-preview').innerHTML = `<strong>${idea.title.replace(/^"|"$/g,'')}</strong><br><span style="color:var(--muted);font-size:0.75rem">${idea.format} · Scheduled: ${slot.datetime||''}</span><br><span style="color:var(--teal);font-size:0.72rem">Changing the date here will update the schedule.</span>`;
+  document.getElementById('sched-week').value = wi;
+  document.getElementById('sched-slot').value = si;
+  document.getElementById('sched-datetime').value = slot.datetime || '';
+  openModal('schedule-modal');
+}
+
+function openLiveEventForWeek(wi) {
+  liveEditSlot = null;
+  ['live-name','live-date','live-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('live-week').value=wi;
+  openModal('live-event-modal');
+}
+function openLiveEventForWeekSlot(wi,si) {
+  liveEditSlot = null; schedWeek=wi; schedSlot=si; openLiveEventForWeek(wi); }
+
+let liveEditSlot = null; // { wi, si } when editing existing live event
+
+function saveLiveEvent() {
+  const name = document.getElementById('live-name').value.trim();
+  if (!name) { showToast('Please enter the event name'); return; }
+  const wi = parseInt(document.getElementById('live-week').value);
+  const caption = document.getElementById('live-caption-text').textContent.trim();
+  const hashtags = document.getElementById('live-hashtags').value.trim();
+  const cta = document.getElementById('live-cta').value.trim();
+  const notes = document.getElementById('live-notes').value.trim();
+  const date = document.getElementById('live-date').value.trim();
+  const slot = { type:'live', title:name, date, notes, caption, hashtags, cta };
+
+  if (liveEditSlot) {
+    // Editing existing slot
+    weeks[liveEditSlot.wi].slots[liveEditSlot.si] = slot;
+    liveEditSlot = null;
+    showToast('✅ Live event updated!','teal');
+  } else {
+    const idx = weeks[wi].slots.findIndex(s=>s.type==='empty');
+    if (idx===-1) { showToast('This week already has 3 posts!'); return; }
+    weeks[wi].slots[idx] = slot;
+    showToast('📸 Live event logged!','live');
+  }
+  updateWeekNote(wi); closeModal('live-event-modal'); render(); selectWeekIdx(wi);
+}
+
+function openLiveEventEdit(wi, si) {
+  const slot = weeks[wi].slots[si];
+  liveEditSlot = { wi, si };
+  // Populate week selector
+  const sel = document.getElementById('live-week');
+  sel.innerHTML = weeks.map((w,i)=>`<option value="${i}" ${i===wi?'selected':''}>${w.label}: ${w.range}</option>`).join('');
+  document.getElementById('live-name').value = slot.title || '';
+  document.getElementById('live-date').value = slot.date || '';
+  document.getElementById('live-notes').value = slot.notes || '';
+  document.getElementById('live-client-caption').value = '';
+  document.getElementById('live-caption-text').textContent = slot.caption || '';
+  document.getElementById('live-hashtags').value = slot.hashtags || '';
+  document.getElementById('live-cta').value = slot.cta || '';
+  openModal('live-event-modal');
+}
+
+async function generateLiveCaption() {
+  const name = document.getElementById('live-name').value.trim();
+  if (!name) { showToast('Please enter the event name first'); return; }
+  const clientCaption = document.getElementById('live-client-caption').value.trim();
+  const notes = document.getElementById('live-notes').value.trim();
+  const btn = document.getElementById('live-generate-btn');
+  btn.disabled = true; btn.textContent = '⏳ Generating…';
+
+  let apiKey = localStorage.getItem('cvbs_anthropic_key') || '';
+  if (!apiKey) {
+    apiKey = window.prompt('Enter your Anthropic API key (starts with sk-ant-):\n\nGet one free at console.anthropic.com — saved locally on your Mac only.');
+    if (!apiKey) { btn.disabled = false; btn.textContent = '🪄 Generate Caption + Hashtags'; return; }
+    localStorage.setItem('cvbs_anthropic_key', apiKey.trim());
+  }
+
+  let prompt;
+  if (clientCaption) {
+    prompt = `You are a social media expert for CVBS — a worldwide conference and venue sourcing service. CVBS is professional, expert, warm but never salesy.
+
+A client has provided this caption for a live event post about: "${name}"
+${notes ? 'Additional context: ' + notes : ''}
+
+CLIENT'S CAPTION:
+${clientCaption}
+
+Review this caption and:
+1. Identify what's working well (1-2 sentences)
+2. Suggest specific improvements for CVBS brand voice — professional, expert, worldwide positioning
+3. Provide an improved version of their caption
+
+Then on a new line write: HASHTAGS: followed by 6-8 relevant hashtags specific to this event/venue.
+Then on a new line write: CTA: followed by a short professional call to action.
+
+Format your response clearly with these sections: REVIEW, IMPROVED CAPTION, HASHTAGS, CTA`;
+  } else {
+    prompt = `You are a social media copywriter for CVBS — a worldwide conference and venue sourcing service based in Australia. Professional, expert, warm but never salesy. Instagram @cvbsaustralia.
+
+Write an Instagram caption for a live event post about:
+EVENT/VENUE: ${name}
+${notes ? 'DETAILS: ' + notes : ''}
+
+Write a professional, engaging caption. Then on a new line write: HASHTAGS: followed by 6-8 relevant hashtags specific to this venue/event. Then: CTA: followed by a short professional call to action (no DMs — use "Link in bio" or "Enquire via link in bio").
+
+Caption should be under 200 words. Instagram-ready. No preamble — just the caption, then HASHTAGS:, then CTA:.`;
+  }
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey.trim(),
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await response.json();
+    const text = data.content?.[0]?.text || '';
+    if (text) {
+      // Parse out hashtags and CTA if present
+      const hashMatch = text.match(/HASHTAGS?:([^\n]*(?:\n(?!CTA:)[^\n]*)*)/i);
+      const ctaMatch = text.match(/CTA:([^\n]*(?:\n[^\n]*)*)/i);
+      let captionText = text;
+      if (hashMatch) {
+        captionText = text.substring(0, text.search(/HASHTAGS?:/i)).trim();
+        document.getElementById('live-hashtags').value = hashMatch[1].trim();
+      }
+      if (ctaMatch) {
+        document.getElementById('live-cta').value = ctaMatch[1].trim();
+      }
+      document.getElementById('live-caption-text').textContent = captionText;
+      showToast('🪄 Caption generated!', 'teal');
+    } else {
+      if (data.error?.type === 'authentication_error') {
+        localStorage.removeItem('cvbs_anthropic_key');
+        showToast('❌ Invalid API key — cleared, try again');
+      } else { showToast('Something went wrong — try again'); }
+    }
+  } catch(e) {
+    showToast('Could not connect — check your internet connection');
+  }
+  btn.disabled = false; btn.textContent = '🪄 Generate Caption + Hashtags';
+}
+
+function openScheduleModal(ideaId) {
+  const idea = ideas.find(i=>i.id===ideaId); if (!idea) return;
+  scheduleTargetId = ideaId;
+  document.getElementById('schedule-idea-preview').innerHTML = `<strong>${idea.title.replace(/^"|"$/g,'')}</strong><br><span style="color:var(--muted);font-size:0.75rem">${idea.format} · Best: ${idea.time}</span>`;
+  document.getElementById('sched-datetime').value='';
+  openModal('schedule-modal');
+}
+
+function openScheduleForWeek(wi) {
+  const si = weeks[wi].slots.findIndex(s=>s.type==='empty');
+  if (si===-1) { showToast('Week already full!'); return; }
+  const u = ideas.filter(i=>!i.scheduled);
+  if (!u.length) { openAddIdea(); return; }
+  schedSlot=si; openScheduleModal(u[0].id);
+  document.getElementById('sched-week').value=wi;
+  document.getElementById('sched-slot').value=si;
+}
+
+function openScheduleForWeekSlot(wi,si) {
+  schedWeek=wi; schedSlot=si;
+  const u = ideas.filter(i=>!i.scheduled);
+  if (!u.length) { openAddIdea(); return; }
+  openScheduleModal(u[0].id);
+  document.getElementById('sched-week').value=wi;
+  document.getElementById('sched-slot').value=si;
+}
+
+function confirmSchedule() {
+  const wi=parseInt(document.getElementById('sched-week').value);
+  const si=parseInt(document.getElementById('sched-slot').value);
+  const dt=document.getElementById('sched-datetime').value.trim();
+  if (!scheduleTargetId) return;
+  const slot = weeks[wi].slots[si];
+  if (slot && slot.type === 'planned' && slot.ideaId === scheduleTargetId) {
+    // Editing existing — just update date
+    weeks[wi].slots[si].datetime = dt;
+    weeks[wi].slots[si].date = dt;
+    updateWeekNote(wi); render(); selectWeekIdx(wi);
+    showToast('✅ Post updated!', 'teal');
+    closeModal('schedule-modal');
+  } else {
+    scheduleIdea(scheduleTargetId,wi,si,dt);
+    closeModal('schedule-modal');
+  }
+}
+
+function scheduleIdea(ideaId,wi,si,datetime) {
+  const idea=ideas.find(i=>i.id===ideaId); if (!idea) return;
+  if (weeks[wi].slots[si] && weeks[wi].slots[si].type!=='empty') { showToast('That slot is taken!'); return; }
+  idea.scheduled=true;
+  weeks[wi].slots[si]={ type:'planned', ideaId, date:datetime||idea.time, datetime:datetime||idea.time };
+  updateWeekNote(wi); render(); selectWeekIdx(wi); showView('calendar');
+  showToast(`✅ Scheduled!`);
+}
+
+function removeSlot(wi,si) {
+  const s=weeks[wi].slots[si];
+  if (s.type==='planned') { const i=ideas.find(x=>x.id===s.ideaId); if(i) i.scheduled=false; }
+  weeks[wi].slots[si]={type:'empty'}; updateWeekNote(wi); render();
+}
+
+function removeIdea(id) {
+  const idx=ideas.findIndex(i=>i.id===id); if(idx===-1) return;
+  weeks.forEach(w=>{ w.slots.forEach((s,si)=>{ if(s.type==='planned'&&s.ideaId===id) w.slots[si]={type:'empty'}; }); updateWeekNote2(w); });
+  ideas.splice(idx,1); render(); showToast('Idea removed.');
+}
+
+function updateWeekNote(wi) { updateWeekNote2(weeks[wi]); }
+function updateWeekNote2(w) {
+  const n=w.slots.filter(s=>s.type!=='empty').length, live=w.slots.some(s=>s.type==='live');
+  if(n===2) w.note=live?'Live event fills one slot — full week with just 1 planned post ✅':'2 planned posts — full week ✅';
+  else if(n===1) w.note=live?'Live event logged — add 1 more planned post':'1 post scheduled — need 1 more or log a live event';
+  else w.note='Nothing scheduled — pull ideas from the bank or log a live event';
+}
+
+// ─── CAPTION BUILDER ──────────────────────────────────────────────────────────
+const captionTemplates = {
+  venue: (t,c) => `✨ ${t}\n\n${c||'This venue is one of our favourites in the network — and for good reason.'}\n\n📍 CVBS sources extraordinary venues worldwide.\nTell us your brief and we\'ll have a shortlist in your inbox within 48 hours.\n\n💬 DM us or visit the link in bio to enquire.\n\n#CVBSAustralia #VenueHire #EventVenue #EventPlanning #CorporateEvents #WorldwideVenues #VenueFinder`,
+  tips:  (t,c) => `📋 ${t}\n\n${c||'Here\'s what we tell every client before they sign anything.'}\n\n1️⃣ [Tip one]\n2️⃣ [Tip two]\n3️⃣ [Tip three]\n4️⃣ [Tip four]\n5️⃣ [Tip five]\n\nAt CVBS, we handle every one of these steps for our clients — completely free.\n\n💾 Save this for your next event. Share with your planning team.\n\n#EventTips #EventPlanning #CVBSAustralia #VenueBooking #CorporateEvents`,
+  social:(t,c) => `❝ ${t} ❞\n\n${c||'Our client came to us with a brief and a tight deadline. We delivered.'}\n\nFrom brief to booked — that\'s the CVBS way.\n\n👇 Tag someone who has an event coming up — we\'d love to help.\n\n#CVBSAustralia #VenueFinder #EventBooking #ClientLove #CorporateEvents`,
+  edu:   (t,c) => `🎓 ${t}\n\n${c||'A lot of people aren\'t sure exactly what a venue booking service does. Let us explain.'}\n\nAt CVBS, we:\n📌 Understand your event brief\n📌 Search our global venue network\n📌 Negotiate the best rate on your behalf\n📌 Manage it through to booking\n\nAnd it\'s completely free for event planners.\n\n🗳️ Any questions? Drop them below.\n\n#CVBSAustralia #VenueBooking #EventManagement #EventEducation #ConferencePlanning`,
+  promo: (t,c) => `⚠️ ${t}\n\n${c||'The best venues fill fast — and 2026 is no exception.'}\n\n✨ Free venue consultation\n✨ Curated shortlist within 48 hours\n✨ We negotiate the best rate for you\n\n📅 Spots are limited. Book your free consultation via the link in bio.\n\n#CVBSAustralia #EventBooking #VenueHire #CorporateEvents #EventPlanning`,
+};
+
+function openCaptionModal(ideaId) {
+  const idea=ideas.find(i=>i.id===ideaId); if (!idea) return;
+  captionTargetId=ideaId;
+  document.getElementById('caption-post-info').innerHTML=`<strong>${idea.title.replace(/^"|"$/g,'')}</strong><br><span style="color:var(--muted);font-size:0.74rem">${idea.format} · ${idea.time}</span>`;
+  document.getElementById('caption-text').textContent=idea.savedCaption||'';
+  document.getElementById('caption-notes').value='';
+  document.getElementById('caption-hashtags').value=idea.savedHashtags||'#CVBSAustralia #VenueHire #EventPlanning #CorporateEvents #WorldwideVenues';
+  document.getElementById('caption-cta').value=idea.savedCta||'💬 DM us to enquire — link in bio';
+  updateCharCount();
+  openModal('caption-modal');
+}
+
+async function generateCaption() {
+  const idea = ideas.find(i => i.id === captionTargetId);
+  if (!idea) return;
+
+  const notes = document.getElementById('caption-notes').value.trim();
+  const btn = document.getElementById('generate-btn');
+
+  // Loading state
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating…';
+
+  const pm = pillarMeta[idea.pillar];
+  const prompt = `You are a social media copywriter for CVBS — a worldwide conference and venue booking service based in Australia. CVBS finds, negotiates and books event venues globally, completely free for event planners. Their Instagram is @cvbsaustralia with ~350 followers, growing.
+
+Write an Instagram caption for the following post:
+
+POST TITLE: ${idea.title.replace(/^"|"$/g,'')}
+FORMAT: ${idea.format}
+CONTENT PILLAR: ${pm.label}
+BRIEF: ${idea.caption}
+${notes ? `ADDITIONAL NOTES FROM USER: ${notes}` : ''}
+
+CVBS brand voice: confident, warm, expert but never salesy. Speaks to corporate event planners worldwide. Always positions CVBS as the insider expert who makes venue finding effortless and free.
+
+Write ONLY the caption text — no preamble, no explanation. Include:
+- A strong opening hook (first line stops the scroll)
+- The key message in 3-5 short punchy lines
+- A soft CTA at the end (DM us, link in bio)
+- 5-7 relevant hashtags on the final line
+
+Keep it under 300 words. Instagram-ready.`;
+
+  // Get or prompt for API key
+  let apiKey = localStorage.getItem('cvbs_anthropic_key') || '';
+  if (!apiKey) {
+    apiKey = window.prompt('Enter your Anthropic API key (starts with sk-ant-):\n\nGet one free at console.anthropic.com — saved locally on your Mac only.');
+    if (!apiKey) { btn.disabled = false; btn.textContent = '🪄 Generate with AI'; return; }
+    localStorage.setItem('cvbs_anthropic_key', apiKey.trim());
+  }
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey.trim(),
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+    const text = data.content?.[0]?.text || '';
+
+    if (text) {
+      document.getElementById('caption-text').textContent = text;
+      updateCharCount();
+      showToast('🪄 Caption generated!', 'teal');
+    } else {
+      if (data.error?.type === 'authentication_error') {
+        localStorage.removeItem('cvbs_anthropic_key');
+        showToast('❌ Invalid API key — cleared, try again');
+      } else {
+        showToast('Something went wrong — try again');
+      }
+    }
+  } catch(e) {
+    const tmpl = captionTemplates[idea.pillar] || captionTemplates.venue;
+    document.getElementById('caption-text').textContent = tmpl(idea.title.replace(/^"|"$/g,''), idea.caption);
+    updateCharCount();
+    showToast('🪄 Draft generated (offline mode)');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🪄 Generate with AI';
+}
+
+function updateCharCount() {
+  const t=document.getElementById('caption-text').textContent||'';
+  document.getElementById('char-count').textContent=`${t.length} characters`;
+}
+
+function saveCaption() {
+  const idea=ideas.find(i=>i.id===captionTargetId); if (!idea) return;
+  idea.savedCaption=document.getElementById('caption-text').textContent.trim();
+  idea.savedHashtags=document.getElementById('caption-hashtags').value.trim();
+  idea.savedCta=document.getElementById('caption-cta').value.trim();
+  closeModal('caption-modal'); render(); saveState(); showToast('💾 Caption saved!','teal');
+}
+
+// ─── FULL CONTENT MODAL ──────────────────────────────────────────────────────
+let contentModalIdeaId = null;
+
+function openContentModal(ideaId) {
+  const idea = ideas.find(i => i.id === ideaId);
+  if (!idea) return;
+  contentModalIdeaId = ideaId;
+  const pm = pillarMeta[idea.pillar];
+  document.getElementById('content-modal-title').textContent = idea.title.replace(/^"|"$/g,'');
+  document.getElementById('content-modal-meta').textContent = `${pm.label} · ${idea.format} · Best: ${idea.time}`;
+  document.getElementById('content-modal-body').innerHTML = renderFullContent(idea);
+  openModal('content-modal');
+}
+
+function openCaptionFromContent() {
+  if (!contentModalIdeaId) return;
+  closeModal('content-modal');
+  openCaptionModal(contentModalIdeaId);
+}
+
+function renderFullContent(idea) {
+  if (!idea.fullContent) {
+    return `<div class="content-section"><p style="color:var(--muted);font-size:0.82rem;padding:1rem 0">No detailed content available for this idea yet. Use the Caption Builder to start writing.</p></div>`;
+  }
+  const fc = idea.fullContent;
+  let html = '';
+
+  if (fc.type === 'carousel' || fc.type === 'static_story') {
+    // Slides section
+    const slides = fc.slides || (fc.staticPost ? null : null);
+    if (fc.slides) {
+      html += `<div class="content-section">
+        <div class="content-section-label">📱 Slides — Write this exactly</div>`;
+      fc.slides.forEach((s, i) => {
+        html += `<div class="content-slide">
+          <div class="slide-header"><span class="slide-num">${i+1}</span>${s.title}</div>
+          <div class="slide-body" style="white-space:pre-wrap">${escHtml(s.copy)}</div>
+          <div class="content-visual-note">📷 Visual: ${escHtml(s.visual)}</div>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+
+    // Static post
+    if (fc.staticPost) {
+      const sp = fc.staticPost;
+      html += `<div class="content-section">
+        <div class="content-section-label">🖼️ Static Post — Write this exactly</div>
+        <div class="content-slide">
+          <div class="slide-header"><span class="slide-num">H</span>${escHtml(sp.headline)}</div>
+          <div class="slide-body"><strong style="display:block;margin-bottom:4px">${escHtml(sp.subhead)}</strong><span style="white-space:pre-wrap">${escHtml(sp.body)}</span><br><br><strong>${escHtml(sp.cta)}</strong></div>
+          <div class="content-visual-note">📷 Visual: ${escHtml(sp.visual)}</div>
+        </div>
+      </div>`;
+    }
+
+    // Story slides
+    if (fc.story) {
+      html += `<div class="content-section">
+        <div class="content-section-label">📲 Story Slides — Post these too</div>`;
+      fc.story.forEach((s) => {
+        html += `<div class="content-slide">
+          <div class="slide-header"><span class="slide-num">${s.slide}</span>Story Slide ${s.slide}</div>
+          <div class="slide-body" style="white-space:pre-wrap">${escHtml(s.copy)}</div>
+          <div class="content-visual-note">📷 Visual: ${escHtml(s.visual)}</div>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+  }
+
+  if (fc.type === 'reel_disabled') {
+    html += `<div class="content-section">
+      <div class="content-section-label">📸 Photo Carousel — Scene by Scene</div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.75rem">Duration: ${fc.duration}</div>`;
+    fc.scenes.forEach((s, i) => {
+      html += `<div class="content-slide">
+        <div class="slide-header"><span class="slide-num">${i+1}</span>${s.label} <span style="font-weight:400;color:var(--muted);font-size:0.72rem">${s.time}</span></div>
+        <div class="slide-body" style="white-space:pre-wrap">${escHtml(s.copy)}</div>
+      </div>`;
+    });
+    if (fc.musicNote) {
+      html += `<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:7px;padding:0.65rem 0.85rem;font-size:0.74rem;color:#0369a1;margin-top:0.5rem">🎵 Music Note: ${escHtml(fc.musicNote)}</div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Caption
+  if (fc.caption) {
+    html += `<div class="content-section">
+      <div class="content-section-label">✍️ Ready-to-Post Caption</div>
+      <div class="content-caption-preview">${escHtml(fc.caption)}</div>
+    </div>`;
+  }
+
+  return html;
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+const photoChecklistData = [
+  { section:'🏛️ Venue Shots', items:['Wide establishing shot of the full space','Detail shot — decor, signage, or unique feature','Empty room before guests arrive','Exterior or entrance shot'] },
+  { section:'👥 People & Atmosphere', items:['Candid crowd or networking moment','Speaker or panel in action','CVBS team member or host in frame','Guests engaging — laughing, talking, connecting'] },
+  { section:'🍽️ Catering & Experience', items:['Food or drink table styled neatly','Close-up of a signature dish or cocktail','Guest enjoying food or holding a drink'] },
+  { section:'📱 Story Content', items:['Swipe-through teaser of the venue photos','Before/after story slide (empty room vs dressed)','Behind-the-scenes setup photo','A wow detail shot — something unexpected'] },
+];
+
+function openPhotoChecklist() {
+  document.getElementById('photo-checklist-items').innerHTML=photoChecklistData.map((s,si)=>`
+    <div class="checklist-section">
+      <div class="checklist-title">${s.section}</div>
+      ${s.items.map((item,ii)=>{
+        const key=`${si}-${ii}`, checked=!!checklistState[key];
+        return `<div class="check-item${checked?' checked':''}" id="ci-${key}" onclick="toggleCheck('${key}')">
+          <input type="checkbox"${checked?' checked':''} readonly>
+          <label>${item}</label>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+  updateChecklistProgress();
+  openModal('photo-modal');
+}
+
+function toggleCheck(key) {
+  checklistState[key]=!checklistState[key];
+  const el=document.getElementById(`ci-${key}`);
+  el.classList.toggle('checked',checklistState[key]);
+  el.querySelector('input').checked=checklistState[key];
+  updateChecklistProgress();
+}
+
+function updateChecklistProgress() {
+  const total=photoChecklistData.reduce((a,s)=>a+s.items.length,0);
+  const done=Object.values(checklistState).filter(Boolean).length;
+  document.getElementById('checklist-bar').style.width=`${Math.round(done/total*100)}%`;
+}
+
+function resetChecklist() { checklistState={}; openPhotoChecklist(); }
+
+// ─── IDEA GENERATOR ───────────────────────────────────────────────────────────
+function openGenerateModal() {
+  const pillar = document.getElementById('gen-pillar').value;
+  document.getElementById('gen-modal-pillar').value = pillar;
+  runGenerate();
+  openModal('generate-modal');
+}
+
+function runGenerate() {
+  const pillar = document.getElementById('gen-modal-pillar').value;
+  generatedPool = getGeneratedIdeas(pillar);
+  selectedGenIds = new Set();
+  if (!generatedPool.length) {
+    document.getElementById('generated-ideas-list').innerHTML = `<div style="text-align:center;padding:2rem;color:var(--muted)">🎉 All ideas for this pillar are already in your bank! Try another pillar or add a custom idea.</div>`;
+    return;
+  }
+  document.getElementById('generated-ideas-list').innerHTML = generatedPool.map((idea,i)=>{
+    const pm = pillarMeta[idea.pillar];
+    return `<div class="gen-idea-item" id="gen-${i}" onclick="toggleGenIdea(${i})">
+      <div class="check">✓</div>
+      <div>
+        <div style="display:flex;gap:6px;margin-bottom:4px;flex-wrap:wrap;">
+          <span class="pillar-tag ${pm.cls}">${pm.label}</span>
+          <span class="format-pill">${idea.format}</span>
+        </div>
+        <div class="gen-idea-title">${idea.title}</div>
+        <div class="gen-idea-meta">${idea.caption.substring(0,80)}… · ⏰ ${idea.time}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleGenIdea(i) {
+  if (selectedGenIds.has(i)) selectedGenIds.delete(i);
+  else selectedGenIds.add(i);
+  document.getElementById(`gen-${i}`).classList.toggle('selected', selectedGenIds.has(i));
+}
+
+function addSelectedIdeas() {
+  if (!selectedGenIds.size) { showToast('Select at least one idea'); return; }
+  selectedGenIds.forEach(i => {
+    const idea = generatedPool[i];
+    ideas.push({ id:nextId++, title:idea.title, pillar:idea.pillar, format:idea.format, caption:idea.caption, time:idea.time, scheduled:false, savedCaption:'', savedHashtags:'', savedCta:'' });
+  });
+  closeModal('generate-modal'); render(); showView('bank');
+  showToast(`✅ ${selectedGenIds.size} idea${selectedGenIds.size>1?'s':''} added to bank!`,'teal');
+}
+
+// ─── EXPORT ───────────────────────────────────────────────────────────────────
+function openExport() {
+  let txt = `CVBS SOCIAL PLANNER — @cvbsaustralia\n${'─'.repeat(48)}\n\n`;
+  weeks.forEach(w => {
+    const n = w.slots.filter(s=>s.type!=='empty').length;
+    if (n===0 && weeks.indexOf(w) > 3) return; // skip far-future empty weeks in export
+    txt += `${w.label.toUpperCase()} (${w.range})\n`;
+    w.slots.forEach((s,si) => {
+      if (s.type==='live') txt+=`  Post ${si+1}: 📸 LIVE EVENT — ${s.title} (${s.date||''})\n`;
+      else if (s.type==='planned') { const i=ideas.find(x=>x.id===s.ideaId); txt+=`  Post ${si+1}: 📝 ${i?i.title.replace(/^"|"$/g,''):'?'} (${s.datetime||''})\n`; if(i&&i.savedCaption) txt+=`           Caption: ${i.savedCaption.substring(0,70)}…\n`; }
+      else txt+=`  Post ${si+1}: ⬜ Empty\n`;
+    });
+    txt+=`  → ${w.note}\n\n`;
+  });
+  txt+=`\nIDEA BANK (${ideas.filter(i=>!i.scheduled).length} unscheduled)\n${'─'.repeat(48)}\n`;
+  ideas.filter(i=>!i.scheduled).forEach(i=>{ txt+=`• ${i.title.replace(/^"|"$/g,'').substring(0,60)} [${i.format}]\n`; });
+  document.getElementById('export-preview').textContent=txt;
+  openModal('export-modal');
+}
+function copyExportText() { navigator.clipboard.writeText(document.getElementById('export-preview').textContent).then(()=>showToast('📋 Copied!')); }
+function printPlanner() { document.getElementById('print-date').textContent=new Date().toLocaleDateString('en-AU'); closeModal('export-modal'); setTimeout(()=>window.print(),200); }
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+function showToast(msg,type='') {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=`toast show ${type}`;
+  setTimeout(()=>t.className='toast',3000);
+}
+
+// ─── LOCAL STORAGE ────────────────────────────────────────────────────────────
+const LS_KEY = 'cvbs_planner_v5';
+
+function saveState() {
+  try {
+    const weekSlots = weeks.map(w => w.slots);
+    const ideaState = ideas.map(i => ({
+      id: i.id, title: i.title, pillar: i.pillar, format: i.format,
+      caption: i.caption, time: i.time, scheduled: i.scheduled,
+      savedCaption: i.savedCaption, savedHashtags: i.savedHashtags, savedCta: i.savedCta
+    }));
+    const customIdeas = ideas.filter(i => i.id >= 10).map(i => ({
+      id: i.id, title: i.title, pillar: i.pillar, format: i.format,
+      caption: i.caption, time: i.time, scheduled: i.scheduled,
+      savedCaption: i.savedCaption, savedHashtags: i.savedHashtags, savedCta: i.savedCta,
+      isCustom: true
+    }));
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      weekSlots, ideaState, customIdeas, nextId, checklistState,
+      savedAt: new Date().toISOString()
+    }));
+    // Flash save indicator
+    const ind = document.getElementById('save-indicator');
+    if (ind) {
+      const now = new Date().toLocaleTimeString('en-AU', {hour:'2-digit',minute:'2-digit'});
+      ind.textContent = `💾 Saved ${now}`;
+      ind.style.color = 'rgba(178,237,242,0.8)';
+      setTimeout(() => { ind.style.color = 'rgba(255,255,255,0.4)'; }, 2000);
+    }
+  } catch(e) { console.warn('Save failed:', e); }
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+
+    // Restore week slots
+    if (data.weekSlots) {
+      data.weekSlots.forEach((slots, wi) => {
+        // Migrate old 2-slot data to 3 slots
+        while (slots.length < 3) slots.push({ type:'empty' });
+        if (weeks[wi]) weeks[wi].slots = slots;
+      });
+      weeks.forEach(w => updateWeekNote2(w));
+    }
+
+    // Restore user-editable fields on built-in ideas
+    if (data.ideaState) {
+      data.ideaState.forEach(saved => {
+        const idea = ideas.find(i => i.id === saved.id);
+        if (idea) {
+          idea.scheduled = saved.scheduled;
+          idea.savedCaption = saved.savedCaption || '';
+          idea.savedHashtags = saved.savedHashtags || '';
+          idea.savedCta = saved.savedCta || '';
+          // Allow title edits too if user changed them
+          if (saved.title) idea.title = saved.title;
+        }
+      });
+    }
+
+    // Restore custom ideas (added by user, id >= 10)
+    if (data.customIdeas && data.customIdeas.length) {
+      data.customIdeas.forEach(ci => {
+        if (!ideas.find(i => i.id === ci.id)) {
+          ideas.push({ ...ci, fullContent: null });
+        }
+      });
+    }
+
+    if (data.nextId) nextId = data.nextId;
+    if (data.checklistState) checklistState = data.checklistState;
+    return true;
+  } catch(e) { console.warn('Load failed:', e); return false; }
+}
+
+function clearState() {
+  if (!confirm('⚠️ This will reset ALL your data — scheduled posts, saved captions, and custom ideas. This cannot be undone. Continue?')) return;
+  localStorage.removeItem(LS_KEY);
+  location.reload();
+}
+
+// Patch render() to auto-save after every render
+const _origRender = render;
+render = function() { _origRender(); saveState(); };
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open'); }));
+const hadSavedData = loadState();
+render();
+if (hadSavedData) showToast('✅ Your data has been restored', 'teal');
+</script>
+</body>
+</html>
