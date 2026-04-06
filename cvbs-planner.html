@@ -2027,11 +2027,11 @@ function draw() {
 
     inner =
       (photoData
-        ? '<div style="position:absolute;inset:0;background-image:url(\'' + photoData + '\');background-size:cover;background-position:center;"></div>'
+        ? '<img src="' + photoData + '" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block;">'
         : '<div style="position:absolute;inset:0;background:linear-gradient(160deg,#1a4a52,#0d2d3a);display:flex;align-items:center;justify-content:center;"><span style="font-size:.75rem;color:rgba(255,255,255,.25);font-weight:600;">Upload a photo &#8593;</span></div>'
       ) +
-      // Dark gradient overlay
-      '<div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0) 55%,rgba(8,22,35,0.55) 100%);"></div>' +
+      // Subtle gradient only at very bottom for text legibility — no blur
+      '<div style="position:absolute;left:0;right:0;bottom:0;height:55%;background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(5,15,25,0.72) 100%);"></div>' +
       // Bottom text block
       '<div style="position:absolute;bottom:0;left:0;right:0;padding:24px 28px 24px;z-index:2;">' +
         '<div style="width:28px;height:2px;background:#19a8b8;border-radius:2px;margin-bottom:9px;"></div>' +
@@ -2248,10 +2248,10 @@ function draw() {
       var photoH = 58; var infoH = 42;
       inner =
         (window.edmPhotoData
-          ? '<div style="position:absolute;top:0;left:0;right:0;height:' + photoH + '%;background-image:url(' + window.edmPhotoData + ');background-size:cover;background-position:center;"></div>'
+          ? '<img src="' + window.edmPhotoData + '" style="position:absolute;top:0;left:0;right:0;width:100%;height:' + photoH + '%;object-fit:cover;object-position:center;display:block;">'
           : '<div style="position:absolute;top:0;left:0;right:0;height:' + photoH + '%;background:linear-gradient(160deg,#1a4a52,#0d2d3a);display:flex;align-items:center;justify-content:center;"><span style="font-size:.72rem;color:rgba(255,255,255,.25);font-weight:600;">Upload a venue photo ↑</span></div>'
         ) +
-        '<div style="position:absolute;left:0;right:0;height:80px;top:calc(' + photoH + '% - 50px);background:linear-gradient(to bottom,rgba(2,26,38,0),#021a26);"></div>' +
+        '<div style="position:absolute;left:0;right:0;height:60px;top:calc(' + photoH + '% - 40px);background:linear-gradient(to bottom,rgba(2,26,38,0),#021a26);"></div>' +
         '<div style="position:absolute;bottom:0;left:0;right:0;height:' + infoH + '%;background:#021a26;padding:16px 24px 14px;display:flex;flex-direction:column;justify-content:flex-start;">' +
           '<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px;">' +
             '<span style="width:20px;height:1.5px;background:#19a8b8;display:inline-block;flex-shrink:0;"></span>' +
