@@ -985,7 +985,8 @@ function renderKanban(){
     const cp=posts.filter(p=>(p.status||'draft')===status).sort((a,b)=>new Date(a.date)-new Date(b.date));
     const cards=cp.map(p=>{
       const dt=p.date?new Date(p.date+'T12:00:00'):null;
-      const dl=dt?`${DAY_LABELS[dt.getDay()]} ${dt.getDate()} ${MONTH_NAMES[dt.getMonth()].substring(0,3)}`:'—';
+      const monthName = dt && MONTH_NAMES[dt.getMonth()] ? MONTH_NAMES[dt.getMonth()].substring(0,3) : '';
+      const dl=dt&&!isNaN(dt)?`${DAY_LABELS[dt.getDay()]||''} ${dt.getDate()} ${monthName}`:'—';
       const imgEl=p.imgSrc?`<img class="k-card-img" src="${p.imgSrc}" alt="">`:`<div class="k-card-img-ph">📷 no photo</div>`;
       return `<div class="k-card" onclick="openEditPost('${p.id}')"><div class="k-card-day">${dl} · ${p.type||'post'}</div><div class="k-card-subject">${escHtml(p.subject||'Untitled')}</div><div style="display:flex;gap:4px;flex-wrap:wrap;"><span style="font-family:'Montserrat',sans-serif;font-size:7px;padding:2px 6px;border-radius:2px;background:rgba(25,168,184,.12);color:var(--teal);">${PILLAR_LABELS[p.pillar]||'—'}</span></div>${imgEl}<div class="k-card-status-row">${cols.map(s=>`<button class="btn btn-xs ${s===status?'btn-primary':'btn-ghost'}" onclick="quickStatus('${p.id}','${s}');event.stopPropagation()">${s}</button>`).join('')}</div></div>`;
     }).join('')||`<div style="text-align:center;padding:20px 8px;font-family:'Montserrat',sans-serif;font-size:8px;color:var(--muted);">no ${status} posts</div>`;
@@ -1546,22 +1547,23 @@ function rowToPost(row){
     notes:   row.notes||'',
     status:  row.status||'draft',
     imgSrc:  row.img_src||'',
-    imgSrcs: [],
+    imgSrcs: row.img_srcs ? row.img_srcs.split('|').filter(Boolean) : [],
   };
 }
 
 // Map post → sheet record
 function postToRow(p){
   return {
-    id:      p.id||'',
-    date:    p.date||'',
-    type:    p.type||'',
-    pillar:  p.pillar||'',
-    subject: p.subject||'',
-    caption: p.caption||'',
-    notes:   p.notes||'',
-    status:  p.status||'draft',
-    img_src: p.imgSrc||'',
+    id:       p.id||'',
+    date:     p.date||'',
+    type:     p.type||'',
+    pillar:   p.pillar||'',
+    subject:  p.subject||'',
+    caption:  p.caption||'',
+    notes:    p.notes||'',
+    status:   p.status||'draft',
+    img_src:  p.imgSrc||'',
+    img_srcs: (p.imgSrcs&&p.imgSrcs.length)?p.imgSrcs.filter(s=>s&&s.startsWith('http')).join('|'):'',
   };
 }
 
