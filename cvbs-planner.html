@@ -394,7 +394,7 @@ input,textarea,select{font-family:inherit;}
       <div class="page-header">
         <div>
           <div class="page-eyebrow">Content Calendar</div>
-          <div class="page-title" id="calTitle">Loading...</div>
+          <div class="page-title" id="calTitle"></div>
         </div>
         <div class="page-actions">
           <button class="btn btn-ghost btn-sm" onclick="changeMonth(-1)">← Prev</button>
@@ -1597,7 +1597,7 @@ function postToRow(p){
 
 async function gsLoadAll(){
   try{
-    const res = await fetch(GS_URL);
+    const res = await fetch(GS_URL + '?action=load');
     if(!res.ok) throw new Error('Sheets load failed: '+res.status);
     const data = await res.json();
     return (data.records||[]).filter(r=>r.id).map(rowToPost);
@@ -1609,19 +1609,14 @@ async function gsLoadAll(){
 
 async function gsUpsertPost(p){
   try{
-    await fetch(GS_URL,{
-      method:'POST',
-      body:JSON.stringify({action:'upsert', record:postToRow(p)}),
-    });
+    const record = encodeURIComponent(JSON.stringify(postToRow(p)));
+    await fetch(GS_URL + '?action=upsert&record=' + record);
   }catch(e){console.warn('Sheets upsert error:',e);}
 }
 
 async function gsDeletePost(p){
   try{
-    await fetch(GS_URL,{
-      method:'POST',
-      body:JSON.stringify({action:'delete', id:p.id}),
-    });
+    await fetch(GS_URL + '?action=delete&id=' + encodeURIComponent(p.id));
   }catch(e){console.warn('Sheets delete error:',e);}
 }
 
@@ -1677,35 +1672,33 @@ async function loadSaved(){
 
   const pill=document.getElementById('savePill');
 
-  // Step 1 — load from localStorage instantly so UI isn't blank
+  // Step 1 — load from localStorage instantly
   try{
     const raw=localStorage.getItem('cvbs_posts');
-    if(raw){const d=JSON.parse(raw);if(Array.isArray(d)&&d.length){posts=d;}}
+    if(raw){const d=JSON.parse(raw);if(Array.isArray(d))posts=d;}
   }catch(e){}
 
-  // Render immediately with localStorage data
-  if(posts.length){
-    pill.textContent='ready';pill.className='save-pill';
-    renderCalendar();renderKanban();buildShootList();renderLibrary();
-  }
+  // Always render immediately — even if no posts
+  pill.textContent='ready';pill.className='save-pill';
+  renderCalendar();renderKanban();buildShootList();renderLibrary();
 
-  // Step 2 — sync from Google Sheets in background
-  pill.textContent='syncing…';pill.className='save-pill saving';
-  const gsPosts=await gsLoadAll();
-  if(gsPosts&&gsPosts.length){
-    posts=gsPosts;
-    // Update localStorage with fresh Sheets data
-    localStorage.setItem('cvbs_posts',JSON.stringify(posts.map(p=>({
-      ...p,
-      imgSrc: p.imgSrc&&p.imgSrc.startsWith('http')?p.imgSrc:(p.imgSrc&&p.imgSrc.length<200000?p.imgSrc:''),
-      imgSrcs:[]
-    }))));
-    pill.textContent='synced ✓';pill.className='save-pill ok';
-    setTimeout(()=>{pill.textContent='ready';pill.className='save-pill';},2000);
-    renderCalendar();renderKanban();buildShootList();renderLibrary();
-  } else {
+  // Step 2 — sync from Google Sheets in background (non-blocking)
+  gsLoadAll().then(gsPosts=>{
+    if(gsPosts&&gsPosts.length){
+      posts=gsPosts;
+      localStorage.setItem('cvbs_posts',JSON.stringify(posts.map(p=>({
+        ...p,
+        imgSrc: p.imgSrc&&p.imgSrc.startsWith('http')?p.imgSrc:(p.imgSrc&&p.imgSrc.length<200000?p.imgSrc:''),
+        imgSrcs:[]
+      }))));
+      pill.textContent='synced ✓';pill.className='save-pill ok';
+      setTimeout(()=>{pill.textContent='ready';pill.className='save-pill';},2000);
+      renderCalendar();renderKanban();buildShootList();renderLibrary();
+    }
+  }).catch(e=>{
+    console.warn('Sheets sync error:',e);
     pill.textContent='ready';pill.className='save-pill';
-  }
+  });
 }
 
 // UTILS
