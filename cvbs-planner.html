@@ -1670,7 +1670,7 @@ function autoSave(){
   clearTimeout(saveTimer);
   saveTimer=setTimeout(async ()=>{
     try{
-      // Save settings to localStorage (lightweight)
+      // Always save settings + posts to localStorage (instant, reliable backup)
       localStorage.setItem('cvbs_settings',JSON.stringify({
         weekOf:   document.getElementById('genWeekOf').value,
         brandVoice:document.getElementById('setBrandVoice')?.value||'',
@@ -1680,10 +1680,18 @@ function autoSave(){
         booking:  document.getElementById('setBooking')?.value||'',
         savedAt:  new Date().toISOString(),
       }));
-      // Save all posts to Airtable
-      await Promise.all(posts.map(p=>atUpsertPost(p)));
+      // Save posts to localStorage (strip large base64 to avoid quota errors)
+      localStorage.setItem('cvbs_posts',JSON.stringify(posts.map(p=>({
+        ...p,
+        imgSrc: p.imgSrc&&p.imgSrc.startsWith('http') ? p.imgSrc : (p.imgSrc&&p.imgSrc.length<200000?p.imgSrc:''),
+        imgSrcs:[]
+      }))));
       pill.textContent='saved ✓';pill.className='save-pill ok';
       setTimeout(()=>{pill.textContent='saved';pill.className='save-pill';},2500);
+      // Also sync to Airtable in background (non-blocking)
+      if(getATToken()){
+        Promise.all(posts.map(p=>atUpsertPost(p))).catch(e=>console.warn('Airtable sync error:',e));
+      }
     }catch(e){
       console.error('autoSave error:',e);
       pill.textContent='save failed';pill.className='save-pill saving';
@@ -1703,20 +1711,39 @@ async function loadSaved(){
     if(s.booking&&document.getElementById('setBooking'))document.getElementById('setBooking').value=s.booking;
   }catch(e){}
 
-  // Load posts from Airtable
   const pill=document.getElementById('savePill');
-  pill.textContent='loading…';pill.className='save-pill saving';
-  const atPosts=await atLoadAll();
-  if(atPosts&&atPosts.length){
-    posts=atPosts;
-    pill.textContent='loaded ✓';pill.className='save-pill ok';
-    setTimeout(()=>{pill.textContent='ready';pill.className='save-pill';},2000);
+
+  // Step 1 — load from localStorage instantly so UI isn't blank
+  try{
+    const raw=localStorage.getItem('cvbs_posts');
+    if(raw){const d=JSON.parse(raw);if(Array.isArray(d)&&d.length){posts=d;}}
+  }catch(e){}
+
+  // Render immediately with localStorage data
+  if(posts.length){
+    pill.textContent='ready';pill.className='save-pill';
+    renderCalendar();renderKanban();buildShootList();renderLibrary();
+  }
+
+  // Step 2 — sync from Airtable in background if token exists
+  if(getATToken()){
+    pill.textContent='syncing…';pill.className='save-pill saving';
+    const atPosts=await atLoadAll();
+    if(atPosts&&atPosts.length){
+      posts=atPosts;
+      // Update localStorage with fresh Airtable data
+      localStorage.setItem('cvbs_posts',JSON.stringify(posts.map(p=>({
+        ...p,
+        imgSrc: p.imgSrc&&p.imgSrc.startsWith('http')?p.imgSrc:(p.imgSrc&&p.imgSrc.length<200000?p.imgSrc:''),
+        imgSrcs:[]
+      }))));
+      pill.textContent='synced ✓';pill.className='save-pill ok';
+      setTimeout(()=>{pill.textContent='ready';pill.className='save-pill';},2000);
+      renderCalendar();renderKanban();buildShootList();renderLibrary();
+    } else {
+      pill.textContent='ready';pill.className='save-pill';
+    }
   } else {
-    // Fallback to localStorage if Airtable fails or is empty
-    try{
-      const raw=localStorage.getItem('cvbs_posts');
-      if(raw){const d=JSON.parse(raw);if(Array.isArray(d))posts=d;}
-    }catch(e){}
     pill.textContent='ready';pill.className='save-pill';
   }
 }
