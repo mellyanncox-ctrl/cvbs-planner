@@ -700,6 +700,16 @@ Complimentary WiFi</textarea></div>
           <div id="keyStatus" class="key-status key-none" style="margin-top:7px;">no key saved</div>
         </div>
         <div class="settings-card">
+          <div class="settings-title">🗄 Airtable Token</div>
+          <div class="settings-row">
+            <div class="settings-field" style="max-width:380px;"><label>Personal Access Token <span style="font-weight:400;text-transform:none;">(saved locally)</span></label><input type="password" id="atTokenInput" placeholder="pat..." autocomplete="off"></div>
+            <button class="btn btn-primary btn-sm" onclick="saveATToken()">Save</button>
+            <button class="btn btn-ghost btn-sm" onclick="clearATToken()">Clear</button>
+          </div>
+          <div style="margin-top:7px;font-family:'Montserrat',sans-serif;font-size:7px;color:var(--muted);line-height:1.8;">get at <strong>airtable.com/create/tokens</strong> · stored in browser localStorage</div>
+          <div id="atTokenStatus" class="key-status key-none" style="margin-top:7px;">no token saved</div>
+        </div>
+        <div class="settings-card">
           <div class="settings-title">🏢 Business Details</div>
           <div class="settings-row">
             <div class="settings-field"><label>Business Name</label><input type="text" id="setVenue" value="CVBS Australia"></div>
@@ -1061,8 +1071,10 @@ function savePost(){
 function deleteCurrentPost(){
   if(!editingId)return;
   if(!confirm('Delete this post?'))return;
+  const p=posts.find(x=>x.id===editingId);
   posts=posts.filter(p=>p.id!==editingId);
-  closeModal();autoSave();renderCalendar();renderKanban();buildShootList();showToast('deleted');
+  if(p) atDeletePost(p);
+  closeModal();renderCalendar();renderKanban();buildShootList();renderLibrary();showToast('deleted');
 }
 
 function selectPillar(el){document.querySelectorAll('.pillar-opt').forEach(o=>o.classList.remove('active'));el.classList.add('active');}
@@ -1078,15 +1090,31 @@ function switchPhotoUI(type){
 
 function handlePhotoUpload(input){
   const file=input.files[0];if(!file)return;
+  // Show preview immediately via base64 while uploading
   const reader=new FileReader();
   reader.onload=e=>{
-    currentFullPhoto=e.target.result;
+    currentFullPhoto=e.target.result; // temp base64 preview
     document.getElementById('photoPreview').src=e.target.result;
     document.getElementById('photoPreview').style.display='block';
     document.getElementById('photoPlaceholder').style.display='none';
     document.getElementById('removePhotoBtn').style.display='inline-flex';
+    document.getElementById('removePhotoBtn').textContent='Uploading…';
+    document.getElementById('removePhotoBtn').disabled=true;
   };
   reader.readAsDataURL(file);
+  // Upload to Cloudinary in background
+  uploadToCloudinary(file).then(url=>{
+    currentFullPhoto=url; // replace base64 with CDN URL
+    document.getElementById('photoPreview').src=url;
+    document.getElementById('removePhotoBtn').textContent='Remove photo';
+    document.getElementById('removePhotoBtn').disabled=false;
+    showToast('photo uploaded ✓');
+  }).catch(err=>{
+    console.warn('Cloudinary upload failed, keeping base64:',err);
+    document.getElementById('removePhotoBtn').textContent='Remove photo';
+    document.getElementById('removePhotoBtn').disabled=false;
+    showToast('upload failed — photo saved locally');
+  });
 }
 
 function removePhoto(){currentFullPhoto='';document.getElementById('photoPreview').style.display='none';document.getElementById('photoPreview').src='';document.getElementById('photoPlaceholder').style.display='flex';document.getElementById('removePhotoBtn').style.display='none';}
@@ -1099,7 +1127,29 @@ function renderCarouselSlots(){
   wrap.innerHTML=carouselImages.map((src,i)=>`<div style="position:relative;"><div style="width:100%;aspect-ratio:1;background:var(--mint);border:1px dashed var(--border);border-radius:2px;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center;" onclick="triggerCarouselUpload(${i})">${src?`<img src="${typeof src==='object'?(src.thumb||src.full):src}" style="width:100%;height:100%;object-fit:cover;">`:'<span style="font-size:16px;opacity:.4;">+</span>'}</div><button onclick="removeCarouselSlot(${i})" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);border:none;color:#fff;border-radius:50%;width:14px;height:14px;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button></div>`).join('');
   if(btn) btn.style.display=carouselImages.length>=10?'none':'flex';
 }
-function triggerCarouselUpload(i){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{carouselImages[i]=ev.target.result;renderCarouselSlots();};r.readAsDataURL(f);};inp.click();}
+function triggerCarouselUpload(i){
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='image/*';
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    // Show base64 preview immediately
+    const r=new FileReader();
+    r.onload=ev=>{
+      carouselImages[i]=ev.target.result;
+      renderCarouselSlots();
+      // Upload to Cloudinary
+      uploadToCloudinary(f).then(url=>{
+        carouselImages[i]=url;
+        renderCarouselSlots();
+        showToast('image uploaded ✓');
+      }).catch(()=>{
+        showToast('upload failed — image saved locally');
+      });
+    };
+    r.readAsDataURL(f);
+  };
+  inp.click();
+}
 function removeCarouselSlot(i){carouselImages.splice(i,1);renderCarouselSlots();}
 
 // ═══════════════════════════════════════
@@ -1465,36 +1515,178 @@ function updateApiStatus(s){
 }
 if(apiKey){document.getElementById('apiKeyInput').value=apiKey;updateApiStatus('ok');}
 
+function saveATToken(){
+  const v=document.getElementById('atTokenInput').value.trim();
+  if(!v){showToast('paste your Airtable token first');return;}
+  localStorage.setItem('cvbs_at_token',v);
+  updateATTokenStatus('ok');
+  showToast('Airtable token saved ✓ — reloading data...');
+  loadSaved().then(()=>{renderCalendar();renderKanban();buildShootList();renderLibrary();});
+}
+function clearATToken(){
+  localStorage.removeItem('cvbs_at_token');
+  document.getElementById('atTokenInput').value='';
+  updateATTokenStatus('none');
+  showToast('Airtable token cleared');
+}
+function updateATTokenStatus(s){
+  const el=document.getElementById('atTokenStatus');
+  if(!el)return;
+  el.className='key-status '+(s==='ok'?'key-ok':'key-none');
+  el.textContent=s==='ok'?'✓ token saved — syncing with Airtable':'no token saved — using localStorage only';
+}
+// Init AT token status on load
+(function(){
+  const t=localStorage.getItem('cvbs_at_token');
+  if(t){document.getElementById('atTokenInput').value=t;updateATTokenStatus('ok');}
+  else{updateATTokenStatus('none');}
+})();
+
+// ═══════════════════════════════════════
+// CLOUDINARY
+// ═══════════════════════════════════════
+const CLOUDINARY_CLOUD  = 'dmijstkjk';
+const CLOUDINARY_PRESET = 'cvbs';
+
+async function uploadToCloudinary(file){
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', CLOUDINARY_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`,{method:'POST',body:fd});
+  if(!res.ok) throw new Error('Cloudinary upload failed: HTTP '+res.status);
+  const data = await res.json();
+  if(!data.secure_url) throw new Error('Cloudinary: no URL returned');
+  return data.secure_url;
+}
+
+// ═══════════════════════════════════════
+// AIRTABLE
+// ═══════════════════════════════════════
+const AT_BASE  = 'apppKPKdkHJee2yNT';
+const AT_TABLE = 'Posts';
+const AT_URL   = `https://api.airtable.com/v0/${AT_BASE}/${encodeURIComponent(AT_TABLE)}`;
+
+function getATHeaders(){
+  const token = localStorage.getItem('cvbs_at_token')||'';
+  return {'Authorization':'Bearer '+token,'Content-Type':'application/json'};
+}
+function getATToken(){ return localStorage.getItem('cvbs_at_token')||''; }
+
+// Map post object → Airtable fields
+function postToFields(p){
+  return {
+    post_id:    p.id,
+    date:       p.date||'',
+    type:       p.type||'',
+    pillar:     p.pillar||'',
+    subject:    p.subject||'',
+    caption:    p.caption||'',
+    notes:      p.notes||'',
+    status:     p.status||'draft',
+    img_src:    p.imgSrc||'',
+  };
+}
+
+// Map Airtable record → post object
+function recordToPost(rec){
+  const f = rec.fields;
+  return {
+    id:       f.post_id||rec.id,
+    _recId:   rec.id,
+    date:     f.date||'',
+    type:     f.type||'',
+    pillar:   f.pillar||'',
+    subject:  f.subject||'',
+    caption:  f.caption||'',
+    notes:    f.notes||'',
+    status:   f.status||'draft',
+    imgSrc:   f.img_src||'',
+    imgSrcs:  [],
+  };
+}
+
+async function atLoadAll(){
+  if(!getATToken()) return null;
+  try{
+    let all=[],offset=null;
+    do{
+      const url=AT_URL+'?pageSize=100'+(offset?'&offset='+offset:'');
+      const res=await fetch(url,{headers:getATHeaders()});
+      if(!res.ok) throw new Error('Airtable load failed');
+      const data=await res.json();
+      all=all.concat(data.records||[]);
+      offset=data.offset||null;
+    }while(offset);
+    return all.map(recordToPost);
+  }catch(e){
+    console.warn('Airtable load error:',e);
+    return null;
+  }
+}
+
+async function atUpsertPost(p){
+  if(!getATToken()) return;
+  try{
+    if(p._recId){
+      await fetch(AT_URL+'/'+p._recId,{
+        method:'PATCH',
+        headers:getATHeaders(),
+        body:JSON.stringify({fields:postToFields(p)})
+      });
+    } else {
+      const res=await fetch(AT_URL,{
+        method:'POST',
+        headers:getATHeaders(),
+        body:JSON.stringify({fields:postToFields(p)})
+      });
+      const data=await res.json();
+      const idx=posts.findIndex(x=>x.id===p.id);
+      if(idx>-1 && data.id) posts[idx]._recId=data.id;
+    }
+  }catch(e){console.warn('Airtable upsert error:',e);}
+}
+
+async function atDeletePost(p){
+  if(!p._recId||!getATToken()) return;
+  try{
+    await fetch(AT_URL+'/'+p._recId,{method:'DELETE',headers:getATHeaders()});
+  }catch(e){console.warn('Airtable delete error:',e);}
+}
+
 // ═══════════════════════════════════════
 // SAVE / LOAD
 // ═══════════════════════════════════════
 let saveTimer=null;
+
 function autoSave(){
   const pill=document.getElementById('savePill');
   pill.textContent='saving…';pill.className='save-pill saving';
   clearTimeout(saveTimer);
-  saveTimer=setTimeout(()=>{
+  saveTimer=setTimeout(async ()=>{
     try{
-      localStorage.setItem('cvbs_posts',JSON.stringify(posts.map(p=>({...p,imgSrc:p.imgSrc&&p.imgSrc.length<500000?p.imgSrc:'',imgSrcs:[]}))));
+      // Save settings to localStorage (lightweight)
       localStorage.setItem('cvbs_settings',JSON.stringify({
-        weekOf:document.getElementById('genWeekOf').value,
+        weekOf:   document.getElementById('genWeekOf').value,
         brandVoice:document.getElementById('setBrandVoice')?.value||'',
-        venue:document.getElementById('setVenue')?.value||'',
-        handle:document.getElementById('setHandle')?.value||'',
-        hours:document.getElementById('setHours')?.value||'',
-        booking:document.getElementById('setBooking')?.value||'',
-        savedAt:new Date().toISOString(),
+        venue:    document.getElementById('setVenue')?.value||'',
+        handle:   document.getElementById('setHandle')?.value||'',
+        hours:    document.getElementById('setHours')?.value||'',
+        booking:  document.getElementById('setBooking')?.value||'',
+        savedAt:  new Date().toISOString(),
       }));
-      pill.textContent='saved';pill.className='save-pill ok';
-      setTimeout(()=>{pill.textContent='saved';pill.className='save-pill';},2000);
-    }catch(e){pill.textContent='save failed';pill.className='save-pill saving';}
-  },600);
+      // Save all posts to Airtable
+      await Promise.all(posts.map(p=>atUpsertPost(p)));
+      pill.textContent='saved ✓';pill.className='save-pill ok';
+      setTimeout(()=>{pill.textContent='saved';pill.className='save-pill';},2500);
+    }catch(e){
+      console.error('autoSave error:',e);
+      pill.textContent='save failed';pill.className='save-pill saving';
+    }
+  },800);
 }
-function loadSaved(){
-  try{
-    const raw=localStorage.getItem('cvbs_posts');
-    if(raw){const d=JSON.parse(raw);if(Array.isArray(d))posts=d;}
-  }catch(e){}
+
+async function loadSaved(){
+  // Load settings from localStorage
   try{
     const s=JSON.parse(localStorage.getItem('cvbs_settings')||'{}');
     if(s.weekOf){document.getElementById('genWeekOf').value=s.weekOf;document.getElementById('sidebarWeek').textContent=s.weekOf;}
@@ -1504,6 +1696,23 @@ function loadSaved(){
     if(s.hours&&document.getElementById('setHours'))document.getElementById('setHours').value=s.hours;
     if(s.booking&&document.getElementById('setBooking'))document.getElementById('setBooking').value=s.booking;
   }catch(e){}
+
+  // Load posts from Airtable
+  const pill=document.getElementById('savePill');
+  pill.textContent='loading…';pill.className='save-pill saving';
+  const atPosts=await atLoadAll();
+  if(atPosts&&atPosts.length){
+    posts=atPosts;
+    pill.textContent='loaded ✓';pill.className='save-pill ok';
+    setTimeout(()=>{pill.textContent='ready';pill.className='save-pill';},2000);
+  } else {
+    // Fallback to localStorage if Airtable fails or is empty
+    try{
+      const raw=localStorage.getItem('cvbs_posts');
+      if(raw){const d=JSON.parse(raw);if(Array.isArray(d))posts=d;}
+    }catch(e){}
+    pill.textContent='ready';pill.className='save-pill';
+  }
 }
 
 // UTILS
@@ -1609,8 +1818,8 @@ function sendToDesigner() {
 // ═══════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════
-(function(){
-  loadSaved();
+(async function(){
+  await loadSaved();
   renderCalendar();
   renderChecklist();
   renderKanban();
