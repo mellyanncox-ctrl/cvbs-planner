@@ -1906,6 +1906,8 @@ function forceBg(bg) {
   });
 }
 
+var photoNaturalW = 0, photoNaturalH = 0;
+
 function loadPhoto(e) {
   var f = e.target.files[0];
   if (!f) return;
@@ -1915,7 +1917,14 @@ function loadPhoto(e) {
     var prev = document.getElementById('photo-preview');
     prev.src = photoData;
     prev.style.display = 'block';
-    draw();
+    // Preload to get natural dimensions, then draw
+    var tmp = new Image();
+    tmp.onload = function() {
+      photoNaturalW = tmp.naturalWidth;
+      photoNaturalH = tmp.naturalHeight;
+      draw();
+    };
+    tmp.src = photoData;
   };
   r.readAsDataURL(f);
 }
@@ -2026,14 +2035,27 @@ function draw() {
     var vsub  = document.getElementById('f-vsub').value  || '';
     var vnameHTML = parseHL(vname, '#fff', '#3bc9d9');
 
+    // Pre-calculate cover dimensions so html2canvas renders correctly
+    var photoInner = '';
+    if (photoData) {
+      var iW = photoNaturalW  || 1080;
+      var iH = photoNaturalH || 1350;
+      var cW = 400, cH = 500;
+      var scale = Math.max(cW / iW, cH / iH);
+      var dW = Math.round(iW * scale);
+      var dH = Math.round(iH * scale);
+      var dX = Math.round((cW - dW) / 2);
+      var dY = Math.round((cH - dH) / 2);
+      photoInner = '<div style="position:absolute;top:0;left:0;width:400px;height:500px;overflow:hidden;">' +
+        '<img src="' + photoData + '" style="position:absolute;top:' + dY + 'px;left:' + dX + 'px;width:' + dW + 'px;height:' + dH + 'px;display:block;">' +
+        '</div>';
+    } else {
+      photoInner = '<div style="position:absolute;inset:0;background:linear-gradient(160deg,#1a4a52,#0d2d3a);display:flex;align-items:center;justify-content:center;"><span style="font-size:.75rem;color:rgba(255,255,255,.25);font-weight:600;">Upload a photo &#8593;</span></div>';
+    }
+
     inner =
-      (photoData
-        ? '<div style="position:absolute;top:0;left:0;width:400px;height:500px;overflow:hidden;">' +
-            '<img src="' + photoData + '" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);min-width:100%;min-height:100%;width:auto;height:auto;max-width:none;max-height:none;">' +
-          '</div>'
-        : '<div style="position:absolute;inset:0;background:linear-gradient(160deg,#1a4a52,#0d2d3a);display:flex;align-items:center;justify-content:center;"><span style="font-size:.75rem;color:rgba(255,255,255,.25);font-weight:600;">Upload a photo &#8593;</span></div>'
-      ) +
-      // Subtle gradient only at bottom for text legibility
+      photoInner +
+      // Subtle gradient at bottom for text legibility
       '<div style="position:absolute;left:0;right:0;bottom:0;height:55%;background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(5,15,25,0.72) 100%);"></div>' +
       // Bottom text block
       '<div style="position:absolute;bottom:0;left:0;right:0;padding:24px 28px 24px;z-index:2;">' +
@@ -2469,6 +2491,7 @@ function resetAll() {
   document.getElementById('f-edm-btn').value     = 'See This Month\'s Picks →';
   document.getElementById('f-edm-footer').value  = 'Free for event planners · cvbs.com.au';
   photoData = null;
+  photoNaturalW = 0; photoNaturalH = 0;
   var prev = document.getElementById('photo-preview');
   prev.style.display = 'none';
   prev.src = '';
