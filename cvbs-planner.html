@@ -709,7 +709,7 @@ Complimentary WiFi</textarea></div>
         <div class="settings-card">
           <div class="settings-title">🗄 Airtable Token</div>
           <div class="settings-row">
-            <div class="settings-field" style="max-width:380px;"><label>Personal Access Token <span style="font-weight:400;text-transform:none;">(saved locally)</span></label><input type="password" id="atTokenInput" placeholder="pat..." autocomplete="off"></div>
+            <div class="settings-field" style="max-width:380px;"><label>Personal Access Token <span style="font-weight:400;text-transform:none;">(saved locally)</span></label><input type="text" id="atTokenInput" placeholder="pat..." autocomplete="off" style="font-family:monospace;font-size:0.65rem;"></div>
             <button class="btn btn-primary btn-sm" onclick="saveATToken()">Save</button>
             <button class="btn btn-ghost btn-sm" onclick="clearATToken()">Clear</button>
           </div>
@@ -1523,11 +1523,14 @@ function updateApiStatus(s){
 if(apiKey){document.getElementById('apiKeyInput').value=apiKey;updateApiStatus('ok');}
 
 function saveATToken(){
-  const v=document.getElementById('atTokenInput').value.trim();
-  if(!v){showToast('paste your Airtable token first');return;}
+  let v=document.getElementById('atTokenInput').value.trim();
+  // Strip any accidental quotes that may have been pasted
+  v=v.replace(/^['"`]+|['"`]+$/g,'').trim();
+  if(!v||!v.startsWith('pat')){showToast('paste a valid Airtable token (starts with pat)');return;}
   localStorage.setItem('cvbs_at_token',v);
+  document.getElementById('atTokenInput').value=v;
   updateATTokenStatus('ok');
-  showToast('Airtable token saved ✓ — reloading data...');
+  showToast('Airtable token saved ✓ — syncing...');
   loadSaved().then(()=>{renderCalendar();renderKanban();buildShootList();renderLibrary();});
 }
 function clearATToken(){
