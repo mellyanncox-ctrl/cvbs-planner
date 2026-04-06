@@ -707,16 +707,6 @@ Complimentary WiFi</textarea></div>
           <div id="keyStatus" class="key-status key-none" style="margin-top:7px;">no key saved</div>
         </div>
         <div class="settings-card">
-          <div class="settings-title">🗄 Airtable Token</div>
-          <div class="settings-row">
-            <div class="settings-field" style="max-width:380px;"><label>Personal Access Token <span style="font-weight:400;text-transform:none;">(saved locally)</span></label><input type="text" id="atTokenInput" placeholder="pat..." autocomplete="off" style="font-family:monospace;font-size:0.65rem;"></div>
-            <button class="btn btn-primary btn-sm" onclick="saveATToken()">Save</button>
-            <button class="btn btn-ghost btn-sm" onclick="clearATToken()">Clear</button>
-          </div>
-          <div style="margin-top:7px;font-family:'Montserrat',sans-serif;font-size:7px;color:var(--muted);line-height:1.8;">get at <strong>airtable.com/create/tokens</strong> · stored in browser localStorage</div>
-          <div id="atTokenStatus" class="key-status key-none" style="margin-top:7px;">no token saved</div>
-        </div>
-        <div class="settings-card">
           <div class="settings-title">🏢 Business Details</div>
           <div class="settings-row">
             <div class="settings-field"><label>Business Name</label><input type="text" id="setVenue" value="CVBS Australia"></div>
@@ -1080,7 +1070,7 @@ function deleteCurrentPost(){
   if(!confirm('Delete this post?'))return;
   const p=posts.find(x=>x.id===editingId);
   posts=posts.filter(p=>p.id!==editingId);
-  if(p) atDeletePost(p);
+  if(p) gsDeletePost(p);
   closeModal();renderCalendar();renderKanban();buildShootList();renderLibrary();showToast('deleted');
 }
 
@@ -1570,97 +1560,69 @@ async function uploadToCloudinary(file){
 }
 
 // ═══════════════════════════════════════
-// AIRTABLE
+// GOOGLE SHEETS API
 // ═══════════════════════════════════════
-const AT_BASE  = 'apppKPKdkHJee2yNT';
-const AT_TABLE = 'Posts';
-const AT_URL   = `https://api.airtable.com/v0/${AT_BASE}/${encodeURIComponent(AT_TABLE)}`;
+const GS_URL = 'https://script.google.com/macros/s/AKfycbznP9xrLibYePGVYaG5dLv4BfR__kin8lqM3R27HtLdJ8itpTtF2s2E56TpOgnLXMpL/exec';
 
-function getATHeaders(){
-  const token = localStorage.getItem('cvbs_at_token')||'';
-  return {'Authorization':'Bearer '+token,'Content-Type':'application/json'};
-}
-function getATToken(){ return localStorage.getItem('cvbs_at_token')||''; }
-
-// Map post object → Airtable fields
-function postToFields(p){
+// Map sheet row → post object
+function rowToPost(row){
   return {
-    post_id:    p.id,
-    date:       p.date||'',
-    type:       p.type||'',
-    pillar:     p.pillar||'',
-    subject:    p.subject||'',
-    caption:    p.caption||'',
-    notes:      p.notes||'',
-    status:     p.status||'draft',
-    img_src:    p.imgSrc||'',
+    id:      row.id||'',
+    date:    row.date||'',
+    type:    row.type||'',
+    pillar:  row.pillar||'',
+    subject: row.subject||'',
+    caption: row.caption||'',
+    notes:   row.notes||'',
+    status:  row.status||'draft',
+    imgSrc:  row.img_src||'',
+    imgSrcs: [],
   };
 }
 
-// Map Airtable record → post object
-function recordToPost(rec){
-  const f = rec.fields;
+// Map post → sheet record
+function postToRow(p){
   return {
-    id:       f.post_id||rec.id,
-    _recId:   rec.id,
-    date:     f.date||'',
-    type:     f.type||'',
-    pillar:   f.pillar||'',
-    subject:  f.subject||'',
-    caption:  f.caption||'',
-    notes:    f.notes||'',
-    status:   f.status||'draft',
-    imgSrc:   f.img_src||'',
-    imgSrcs:  [],
+    id:      p.id||'',
+    date:    p.date||'',
+    type:    p.type||'',
+    pillar:  p.pillar||'',
+    subject: p.subject||'',
+    caption: p.caption||'',
+    notes:   p.notes||'',
+    status:  p.status||'draft',
+    img_src: p.imgSrc||'',
   };
 }
 
-async function atLoadAll(){
-  if(!getATToken()) return null;
+async function gsLoadAll(){
   try{
-    let all=[],offset=null;
-    do{
-      const url=AT_URL+'?pageSize=100'+(offset?'&offset='+offset:'');
-      const res=await fetch(url,{headers:getATHeaders()});
-      if(!res.ok) throw new Error('Airtable load failed');
-      const data=await res.json();
-      all=all.concat(data.records||[]);
-      offset=data.offset||null;
-    }while(offset);
-    return all.map(recordToPost);
+    const res = await fetch(GS_URL);
+    if(!res.ok) throw new Error('Sheets load failed: '+res.status);
+    const data = await res.json();
+    return (data.records||[]).filter(r=>r.id).map(rowToPost);
   }catch(e){
-    console.warn('Airtable load error:',e);
+    console.warn('Sheets load error:',e);
     return null;
   }
 }
 
-async function atUpsertPost(p){
-  if(!getATToken()) return;
+async function gsUpsertPost(p){
   try{
-    if(p._recId){
-      await fetch(AT_URL+'/'+p._recId,{
-        method:'PATCH',
-        headers:getATHeaders(),
-        body:JSON.stringify({fields:postToFields(p)})
-      });
-    } else {
-      const res=await fetch(AT_URL,{
-        method:'POST',
-        headers:getATHeaders(),
-        body:JSON.stringify({fields:postToFields(p)})
-      });
-      const data=await res.json();
-      const idx=posts.findIndex(x=>x.id===p.id);
-      if(idx>-1 && data.id) posts[idx]._recId=data.id;
-    }
-  }catch(e){console.warn('Airtable upsert error:',e);}
+    await fetch(GS_URL,{
+      method:'POST',
+      body:JSON.stringify({action:'upsert', record:postToRow(p)}),
+    });
+  }catch(e){console.warn('Sheets upsert error:',e);}
 }
 
-async function atDeletePost(p){
-  if(!p._recId||!getATToken()) return;
+async function gsDeletePost(p){
   try{
-    await fetch(AT_URL+'/'+p._recId,{method:'DELETE',headers:getATHeaders()});
-  }catch(e){console.warn('Airtable delete error:',e);}
+    await fetch(GS_URL,{
+      method:'POST',
+      body:JSON.stringify({action:'delete', id:p.id}),
+    });
+  }catch(e){console.warn('Sheets delete error:',e);}
 }
 
 // ═══════════════════════════════════════
@@ -1692,10 +1654,8 @@ function autoSave(){
       }))));
       pill.textContent='saved ✓';pill.className='save-pill ok';
       setTimeout(()=>{pill.textContent='saved';pill.className='save-pill';},2500);
-      // Also sync to Airtable in background (non-blocking)
-      if(getATToken()){
-        Promise.all(posts.map(p=>atUpsertPost(p))).catch(e=>console.warn('Airtable sync error:',e));
-      }
+      // Also sync to Google Sheets in background (non-blocking)
+      Promise.all(posts.map(p=>gsUpsertPost(p))).catch(e=>console.warn('Sheets sync error:',e));
     }catch(e){
       console.error('autoSave error:',e);
       pill.textContent='save failed';pill.className='save-pill saving';
@@ -1729,24 +1689,20 @@ async function loadSaved(){
     renderCalendar();renderKanban();buildShootList();renderLibrary();
   }
 
-  // Step 2 — sync from Airtable in background if token exists
-  if(getATToken()){
-    pill.textContent='syncing…';pill.className='save-pill saving';
-    const atPosts=await atLoadAll();
-    if(atPosts&&atPosts.length){
-      posts=atPosts;
-      // Update localStorage with fresh Airtable data
-      localStorage.setItem('cvbs_posts',JSON.stringify(posts.map(p=>({
-        ...p,
-        imgSrc: p.imgSrc&&p.imgSrc.startsWith('http')?p.imgSrc:(p.imgSrc&&p.imgSrc.length<200000?p.imgSrc:''),
-        imgSrcs:[]
-      }))));
-      pill.textContent='synced ✓';pill.className='save-pill ok';
-      setTimeout(()=>{pill.textContent='ready';pill.className='save-pill';},2000);
-      renderCalendar();renderKanban();buildShootList();renderLibrary();
-    } else {
-      pill.textContent='ready';pill.className='save-pill';
-    }
+  // Step 2 — sync from Google Sheets in background
+  pill.textContent='syncing…';pill.className='save-pill saving';
+  const gsPosts=await gsLoadAll();
+  if(gsPosts&&gsPosts.length){
+    posts=gsPosts;
+    // Update localStorage with fresh Sheets data
+    localStorage.setItem('cvbs_posts',JSON.stringify(posts.map(p=>({
+      ...p,
+      imgSrc: p.imgSrc&&p.imgSrc.startsWith('http')?p.imgSrc:(p.imgSrc&&p.imgSrc.length<200000?p.imgSrc:''),
+      imgSrcs:[]
+    }))));
+    pill.textContent='synced ✓';pill.className='save-pill ok';
+    setTimeout(()=>{pill.textContent='ready';pill.className='save-pill';},2000);
+    renderCalendar();renderKanban();buildShootList();renderLibrary();
   } else {
     pill.textContent='ready';pill.className='save-pill';
   }
