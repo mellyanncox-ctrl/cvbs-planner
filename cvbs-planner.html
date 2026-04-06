@@ -1512,36 +1512,6 @@ function updateApiStatus(s){
 }
 if(apiKey){document.getElementById('apiKeyInput').value=apiKey;updateApiStatus('ok');}
 
-function saveATToken(){
-  let v=document.getElementById('atTokenInput').value.trim();
-  // Strip any accidental quotes that may have been pasted
-  v=v.replace(/^['"`]+|['"`]+$/g,'').trim();
-  if(!v||!v.startsWith('pat')){showToast('paste a valid Airtable token (starts with pat)');return;}
-  localStorage.setItem('cvbs_at_token',v);
-  document.getElementById('atTokenInput').value=v;
-  updateATTokenStatus('ok');
-  showToast('Airtable token saved ✓ — syncing...');
-  loadSaved().then(()=>{renderCalendar();renderKanban();buildShootList();renderLibrary();});
-}
-function clearATToken(){
-  localStorage.removeItem('cvbs_at_token');
-  document.getElementById('atTokenInput').value='';
-  updateATTokenStatus('none');
-  showToast('Airtable token cleared');
-}
-function updateATTokenStatus(s){
-  const el=document.getElementById('atTokenStatus');
-  if(!el)return;
-  el.className='key-status '+(s==='ok'?'key-ok':'key-none');
-  el.textContent=s==='ok'?'✓ token saved — syncing with Airtable':'no token saved — using localStorage only';
-}
-// Init AT token status on load
-(function(){
-  const t=localStorage.getItem('cvbs_at_token');
-  if(t){document.getElementById('atTokenInput').value=t;updateATTokenStatus('ok');}
-  else{updateATTokenStatus('none');}
-})();
-
 // ═══════════════════════════════════════
 // CLOUDINARY
 // ═══════════════════════════════════════
