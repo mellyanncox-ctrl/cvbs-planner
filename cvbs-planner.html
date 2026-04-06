@@ -1523,8 +1523,8 @@ async function uploadToCloudinary(file){
   fd.append('file', file);
   fd.append('upload_preset', CLOUDINARY_PRESET);
   const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`,{method:'POST',body:fd});
-  if(!res.ok) throw new Error('Cloudinary upload failed: HTTP '+res.status);
   const data = await res.json();
+  if(!res.ok) throw new Error('Cloudinary error: ' + JSON.stringify(data));
   if(!data.secure_url) throw new Error('Cloudinary: no URL returned');
   return data.secure_url;
 }
@@ -1579,7 +1579,10 @@ async function gsLoadAll(){
 
 async function gsUpsertPost(p){
   try{
-    const record = encodeURIComponent(JSON.stringify(postToRow(p)));
+    // Never send base64 to Sheets — only Cloudinary URLs
+    const row = postToRow(p);
+    if(row.img_src && row.img_src.startsWith('data:')) row.img_src = '';
+    const record = encodeURIComponent(JSON.stringify(row));
     await fetch(GS_URL + '?action=upsert&record=' + record);
   }catch(e){console.warn('Sheets upsert error:',e);}
 }
