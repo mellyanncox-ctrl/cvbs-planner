@@ -1836,8 +1836,8 @@ function sendToDesigner() {
   buildShootList();
   renderArchive();
   renderLibrary();
-  // Init designer
-  setTpl('text', document.querySelectorAll('.tpl-btn')[0]);
+  // Init designer after all scripts loaded
+  setTimeout(()=>{ if(typeof setTpl==='function') setTpl('text', document.querySelectorAll('.tpl-btn')[0]); }, 0);
 })();
 </script>
 
