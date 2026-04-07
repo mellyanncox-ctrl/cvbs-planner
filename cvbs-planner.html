@@ -792,7 +792,7 @@ LANGUAGE RULES
         </div>
         <div id="multiPhotoWrap" style="display:none;">
           <div id="carouselSlots" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(85px,1fr));gap:5px;"></div>
-          <button class="btn btn-ghost btn-sm" onclick="addCarouselSlot()" style="margin-top:5px;width:100%;justify-content:center;" id="addSlotBtn">+ Add image</button>
+          <button class="btn btn-ghost btn-sm" onclick="triggerBulkCarouselUpload()" style="margin-top:5px;width:100%;justify-content:center;" id="addSlotBtn">+ Add images</button>
         </div>
       </div>
       <!-- Date & Type -->
@@ -1125,17 +1125,56 @@ function renderCarouselSlots(){
   wrap.innerHTML=carouselImages.map((src,i)=>`<div style="position:relative;"><div style="width:100%;aspect-ratio:1;background:var(--mint);border:1px dashed var(--border);border-radius:2px;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center;" onclick="triggerCarouselUpload(${i})">${src?`<img src="${typeof src==='object'?(src.thumb||src.full):src}" style="width:100%;height:100%;object-fit:cover;">`:'<span style="font-size:16px;opacity:.4;">+</span>'}</div><button onclick="removeCarouselSlot(${i})" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);border:none;color:#fff;border-radius:50%;width:14px;height:14px;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button></div>`).join('');
   if(btn) btn.style.display=carouselImages.length>=10?'none':'flex';
 }
+
+// Upload multiple files at once
+function triggerBulkCarouselUpload(){
+  const inp=document.createElement('input');
+  inp.type='file';
+  inp.accept='image/*';
+  inp.multiple=true;
+  inp.onchange=e=>{
+    const files=Array.from(e.target.files);
+    if(!files.length)return;
+    const slots=files.length;
+    const startIdx=carouselImages.length;
+    // Add placeholder slots
+    files.forEach(()=>carouselImages.push(''));
+    renderCarouselSlots();
+    showToast(`Uploading ${slots} image${slots>1?'s':''}…`);
+    // Upload each file
+    files.forEach((f,fi)=>{
+      const idx=startIdx+fi;
+      const r=new FileReader();
+      r.onload=ev=>{
+        carouselImages[idx]=ev.target.result;
+        renderCarouselSlots();
+        uploadToCloudinary(f).then(url=>{
+          carouselImages[idx]=url;
+          renderCarouselSlots();
+          // Toast only after all done
+          if(carouselImages.filter(s=>s&&s.startsWith('http')).length===carouselImages.filter(Boolean).length){
+            showToast('All images uploaded ✓');
+          }
+        }).catch(()=>{
+          showToast('One or more uploads failed');
+        });
+      };
+      r.readAsDataURL(f);
+    });
+  };
+  inp.click();
+}
+
+// Click individual slot to replace it
 function triggerCarouselUpload(i){
   const inp=document.createElement('input');
   inp.type='file';inp.accept='image/*';
   inp.onchange=e=>{
     const f=e.target.files[0];if(!f)return;
-    // Show base64 preview immediately
     const r=new FileReader();
     r.onload=ev=>{
       carouselImages[i]=ev.target.result;
       renderCarouselSlots();
-      // Upload to Cloudinary
       uploadToCloudinary(f).then(url=>{
         carouselImages[i]=url;
         renderCarouselSlots();
