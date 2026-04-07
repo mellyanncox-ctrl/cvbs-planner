@@ -878,6 +878,8 @@ let currentFullPhoto = '';
 let carouselImages = [];
 
 const PILLAR_LABELS = {venue:'Venue Spotlight',tips:'Tips',social:'Social Proof',promo:'Promotion',process:'Process'};
+// Safe date parser — handles both YYYY-MM-DD and full ISO strings
+function parseDate(d){if(!d)return null;if(d.includes('T'))return new Date(d);return new Date(d+'T12:00:00');}
 const DAY_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const POST_DAYS = [1,2,3,4,5]; // Mon-Fri posting schedule for B2B
@@ -982,9 +984,9 @@ function renderKanban(){
   const cols=['draft','ready','posted'];
   const labels={draft:'Draft',ready:'Ready to Post',posted:'Posted ✓'};
   document.getElementById('kanbanWrap').innerHTML=cols.map(status=>{
-    const cp=posts.filter(p=>(p.status||'draft')===status).sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const cp=posts.filter(p=>(p.status||'draft')===status).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
     const cards=cp.map(p=>{
-      const dt=p.date?new Date(p.date+'T12:00:00'):null;
+      const dt=p.date?parseDate(p.date):null;
       const monthName = dt && MONTH_NAMES[dt.getMonth()] ? MONTH_NAMES[dt.getMonth()].substring(0,3) : '';
       const dl=dt&&!isNaN(dt)?`${DAY_LABELS[dt.getDay()]||''} ${dt.getDate()} ${monthName}`:'—';
       const imgEl=p.imgSrc?`<img class="k-card-img" src="${p.imgSrc}" alt="">`:`<div class="k-card-img-ph">📷 no photo</div>`;
@@ -1381,13 +1383,13 @@ async function generateCaptions(){
 // ═══════════════════════════════════════
 let shootChecked=JSON.parse(localStorage.getItem('cvbs_shoot')||'{}');
 function buildShootList(){
-  const all=posts.filter(p=>p.status!=='posted').sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const all=posts.filter(p=>p.status!=='posted').sort((a,b)=>parseDate(a.date)-parseDate(b.date));
   const wrap=document.getElementById('shootWrap');
   if(!all.length){wrap.innerHTML=`<div class="empty"><div class="empty-icon">📸</div><div class="empty-title">No Content Planned</div><div class="empty-desc">generate a week or add posts manually.</div></div>`;return;}
   const needsPhoto=all.filter(p=>!p.imgSrc);const hasPhoto=all.filter(p=>!!p.imgSrc);
   const makeCard=p=>{
     const key=p.id;const checked=!!shootChecked[key];
-    const dt=p.date?new Date(p.date+'T12:00:00'):null;
+    const dt=p.date?parseDate(p.date):null;
     const monthName = dt && MONTH_NAMES[dt.getMonth()] ? MONTH_NAMES[dt.getMonth()].substring(0,3) : '';
     const dl=dt&&!isNaN(dt)?`${DAY_LABELS[dt.getDay()]||''} ${dt.getDate()} ${monthName}`:'—';
     const tl=p.type==='story'?'Story':p.type==='post-carousel'?'Carousel':'Post';
@@ -1400,10 +1402,10 @@ function buildShootList(){
 }
 function toggleShootCheck(key){shootChecked[key]=!shootChecked[key];localStorage.setItem('cvbs_shoot',JSON.stringify(shootChecked));buildShootList();}
 function downloadShootList(){
-  const all=posts.filter(p=>p.status!=='posted').sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const all=posts.filter(p=>p.status!=='posted').sort((a,b)=>parseDate(a.date)-parseDate(b.date));
   if(!all.length){showToast('no posts to export');return;}
   let out=`CVBS AUSTRALIA — SHOOT LIST\n${'─'.repeat(40)}\n\n`;
-  all.forEach(p=>{const checked=shootChecked[p.id];const dt=p.date?new Date(p.date+'T12:00:00'):null;const mn=dt&&MONTH_NAMES[dt.getMonth()]?MONTH_NAMES[dt.getMonth()].substring(0,3):'';const day=dt&&!isNaN(dt)?`${DAY_LABELS[dt.getDay()]||''} ${dt.getDate()} ${mn}`:'—';out+=`${checked?'✓':'○'}  ${day} — ${p.subject||'Untitled'}\n`;out+=`   ${p.type||'post'} · ${PILLAR_LABELS[p.pillar]||'—'} · ${p.status||'draft'}\n`;if(p.notes)out+=`   Direction: ${p.notes.substring(0,100)}\n`;out+='\n';});
+  all.forEach(p=>{const checked=shootChecked[p.id];const dt=p.date?parseDate(p.date):null;const mn=dt&&MONTH_NAMES[dt.getMonth()]?MONTH_NAMES[dt.getMonth()].substring(0,3):'';const day=dt&&!isNaN(dt)?`${DAY_LABELS[dt.getDay()]||''} ${dt.getDate()} ${mn}`:'—';out+=`${checked?'✓':'○'}  ${day} — ${p.subject||'Untitled'}\n`;out+=`   ${p.type||'post'} · ${PILLAR_LABELS[p.pillar]||'—'} · ${p.status||'draft'}\n`;if(p.notes)out+=`   Direction: ${p.notes.substring(0,100)}\n`;out+='\n';});
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([out],{type:'text/plain'}));a.download='cvbs-shoot-list.txt';a.click();URL.revokeObjectURL(a.href);showToast('exported ✓');
 }
 
@@ -1421,7 +1423,7 @@ function renderLibrary(){
   wrap.innerHTML=sorted.map(p=>{
     const imgs=(p.imgSrcs&&p.imgSrcs.length>0)?p.imgSrcs:(p.imgSrc?[p.imgSrc]:[]);
     const tl=p.type==='story'?'Story':p.type==='post-carousel'?'Carousel':'Post';
-    const df=p.date?new Date(p.date+'T12:00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'}):'';
+    const df=p.date?parseDate(p.date).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'}):'';
     const thumbs=imgs.map((src,i)=>{
       const dlUrl=typeof src==='object'?(src.full||src.thumb):src;
       const dispUrl=typeof src==='object'?(src.thumb||src.full):src;
@@ -1700,6 +1702,7 @@ async function loadSaved(){
   // Step 2 — sync from Google Sheets in background (non-blocking)
   gsLoadAll().then(gsPosts=>{
     if(gsPosts&&gsPosts.length){
+      // Only update if Sheets has data
       posts=gsPosts;
       localStorage.setItem('cvbs_posts',JSON.stringify(posts.map(p=>({
         ...p,
@@ -1709,6 +1712,12 @@ async function loadSaved(){
       pill.textContent='synced ✓';pill.className='save-pill ok';
       setTimeout(()=>{pill.textContent='ready';pill.className='save-pill';},2000);
       renderCalendar();renderKanban();buildShootList();renderLibrary();
+    } else {
+      // Sheets empty — push localStorage posts up to Sheets
+      pill.textContent='ready';pill.className='save-pill';
+      if(posts.length){
+        posts.forEach(p=>gsUpsertPost(p));
+      }
     }
   }).catch(e=>{
     console.warn('Sheets sync error:',e);
