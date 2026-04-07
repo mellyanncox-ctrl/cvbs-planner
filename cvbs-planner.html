@@ -1388,7 +1388,8 @@ function buildShootList(){
   const makeCard=p=>{
     const key=p.id;const checked=!!shootChecked[key];
     const dt=p.date?new Date(p.date+'T12:00:00'):null;
-    const dl=dt?`${DAY_LABELS[dt.getDay()]} ${dt.getDate()} ${MONTH_NAMES[dt.getMonth()].substring(0,3)}`:'—';
+    const monthName = dt && MONTH_NAMES[dt.getMonth()] ? MONTH_NAMES[dt.getMonth()].substring(0,3) : '';
+    const dl=dt&&!isNaN(dt)?`${DAY_LABELS[dt.getDay()]||''} ${dt.getDate()} ${monthName}`:'—';
     const tl=p.type==='story'?'Story':p.type==='post-carousel'?'Carousel':'Post';
     return `<div class="shoot-card ${checked?'done':''}" id="sc_${key}"><div class="shoot-check ${checked?'checked':''}" onclick="toggleShootCheck('${key}')"></div><div class="shoot-info"><div class="shoot-day">${dl} · ${tl} · ${PILLAR_LABELS[p.pillar]||'—'}</div><div class="shoot-subject">${escHtml(p.subject||'Untitled')}</div>${p.notes?`<div class="shoot-direction">${escHtml(p.notes.substring(0,120))}${p.notes.length>120?'…':''}</div>`:''}</div>${p.imgSrc?`<div style="font-family:'Montserrat',sans-serif;font-size:7px;color:var(--green);background:#e8f5ee;padding:2px 7px;border-radius:2px;white-space:nowrap;align-self:flex-start;">photo ✓</div>`:''}</div>`;
   };
@@ -1402,7 +1403,7 @@ function downloadShootList(){
   const all=posts.filter(p=>p.status!=='posted').sort((a,b)=>new Date(a.date)-new Date(b.date));
   if(!all.length){showToast('no posts to export');return;}
   let out=`CVBS AUSTRALIA — SHOOT LIST\n${'─'.repeat(40)}\n\n`;
-  all.forEach(p=>{const checked=shootChecked[p.id];const dt=p.date?new Date(p.date+'T12:00:00'):null;const day=dt?`${DAY_LABELS[dt.getDay()]} ${dt.getDate()} ${MONTH_NAMES[dt.getMonth()].substring(0,3)}`:'—';out+=`${checked?'✓':'○'}  ${day} — ${p.subject||'Untitled'}\n`;out+=`   ${p.type||'post'} · ${PILLAR_LABELS[p.pillar]||'—'} · ${p.status||'draft'}\n`;if(p.notes)out+=`   Direction: ${p.notes.substring(0,100)}\n`;out+='\n';});
+  all.forEach(p=>{const checked=shootChecked[p.id];const dt=p.date?new Date(p.date+'T12:00:00'):null;const mn=dt&&MONTH_NAMES[dt.getMonth()]?MONTH_NAMES[dt.getMonth()].substring(0,3):'';const day=dt&&!isNaN(dt)?`${DAY_LABELS[dt.getDay()]||''} ${dt.getDate()} ${mn}`:'—';out+=`${checked?'✓':'○'}  ${day} — ${p.subject||'Untitled'}\n`;out+=`   ${p.type||'post'} · ${PILLAR_LABELS[p.pillar]||'—'} · ${p.status||'draft'}\n`;if(p.notes)out+=`   Direction: ${p.notes.substring(0,100)}\n`;out+='\n';});
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([out],{type:'text/plain'}));a.download='cvbs-shoot-list.txt';a.click();URL.revokeObjectURL(a.href);showToast('exported ✓');
 }
 
